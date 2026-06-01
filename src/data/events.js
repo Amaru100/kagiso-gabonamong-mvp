@@ -1,0 +1,32 @@
+export const events = [
+  {
+    id: 'build-lead-impact',
+    title: 'Build. Lead. Impact.',
+    kind: 'Live Seminar',
+    type: 'seminar ticket',
+    date: '18 July 2026',
+    location: 'Gaborone, Botswana',
+    description: 'A live seminar on building with purpose, leading with clarity, and creating meaningful impact.',
+    price: 250,
+  },
+  {
+    id: 'clarity-focus-masterclass',
+    title: 'Clarity & Focus Masterclass',
+    kind: 'Webinar',
+    type: 'webinar ticket',
+    date: '8 August 2026',
+    location: 'Online / Gaborone, Botswana',
+    description: 'A practical online session for removing noise, prioritising well, and acting with confidence.',
+    price: 150,
+  },
+  {
+    id: 'vision-to-action-workshop',
+    title: 'Vision to Action Workshop',
+    kind: 'Workshop',
+    type: 'seminar ticket',
+    date: '12 September 2026',
+    location: 'Gaborone, Botswana',
+    description: 'A hands-on workshop for turning ideas, goals, and business plans into weekly execution.',
+    price: 300,
+  },
+]
