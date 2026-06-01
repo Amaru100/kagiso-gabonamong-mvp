@@ -5,6 +5,7 @@ export const articles = [
     category: 'Motivation',
     readingTime: '4 min read',
     excerpt: 'Dreams become serious when discipline turns intention into daily evidence.',
+    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'mindset-builder',
@@ -12,6 +13,7 @@ export const articles = [
     category: 'Mindset',
     readingTime: '5 min read',
     excerpt: 'Builders think in seasons, systems, and service. They keep improving while others wait for permission.',
+    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'systems-create-freedom',
@@ -19,6 +21,7 @@ export const articles = [
     category: 'Business growth',
     readingTime: '3 min read',
     excerpt: 'Freedom is not the absence of structure. It is the reward of structure that works.',
+    image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'start-small-think-long-term',
@@ -26,6 +29,7 @@ export const articles = [
     category: 'Entrepreneurship',
     readingTime: '4 min read',
     excerpt: 'Small starts build momentum when they are connected to a larger vision and repeated with focus.',
+    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'clarity-creates-momentum',
@@ -33,6 +37,7 @@ export const articles = [
     category: 'Clarity',
     readingTime: '4 min read',
     excerpt: 'The next step becomes easier when the destination and the reason are clear.',
+    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'leadership-is-influence',
@@ -40,5 +45,6 @@ export const articles = [
     category: 'Leadership',
     readingTime: '5 min read',
     excerpt: 'Leadership begins with the ability to model what you ask others to become.',
+    image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80',
   },
 ]

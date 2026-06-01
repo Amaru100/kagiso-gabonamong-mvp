@@ -1,8 +1,10 @@
 import { ArrowRight } from 'lucide-react'
 import Button from '../components/Button.jsx'
 import SectionHeader from '../components/SectionHeader.jsx'
+import MonogramLogo from '../components/MonogramLogo.jsx'
 
 const topics = ['Motivation', 'Entrepreneurship', 'Leadership', 'Clarity', 'Mindset', 'Business growth']
+const authorImage = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1000&q=80'
 
 export default function About() {
   return (
@@ -10,10 +12,13 @@ export default function About() {
       <div className="mx-auto max-w-7xl">
         <SectionHeader eyebrow="About" title="Kagiso Gabonamong" text="A writer, speaker, and seminar host based in Gaborone, Botswana." />
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-lg border border-[#d6b15e]/25 bg-[#111111] p-8">
-            <div className="grid h-24 w-24 place-items-center rounded-md bg-[#d6b15e] text-4xl font-black text-[#070707]">KG</div>
-            <h2 className="mt-6 text-2xl font-black">Mission</h2>
-            <p className="mt-4 leading-7 text-[#cfc8b5]">To help people build lives, careers, and businesses with sharper thinking, stronger discipline, and a deeper commitment to meaningful impact.</p>
+          <div className="overflow-hidden rounded-lg border border-[#d6b15e]/25 bg-[#111111]">
+            <img src={authorImage} alt="" className="h-80 w-full object-cover opacity-90" />
+            <div className="p-8">
+              <MonogramLogo size="md" className="mb-5" />
+              <h2 className="text-2xl font-black">Mission</h2>
+              <p className="mt-4 leading-7 text-[#cfc8b5]">To help people build lives, careers, and businesses with sharper thinking, stronger discipline, and a deeper commitment to meaningful impact.</p>
+            </div>
           </div>
           <div className="rounded-lg border border-white/10 bg-white/[0.035] p-8">
             <h2 className="text-3xl font-black">Professional Bio</h2>

@@ -1,4 +1,5 @@
 import SectionHeader from '../components/SectionHeader.jsx'
+import MonogramLogo from '../components/MonogramLogo.jsx'
 import { useCart } from '../context/CartContext.jsx'
 
 const fallback = {
@@ -22,7 +23,7 @@ export default function EmailPreview() {
       <SectionHeader eyebrow="Email Preview" title="Confirmation Email Demo" text="This page previews the confirmation email layout. It does not send real email." />
       <div className="mx-auto max-w-3xl overflow-hidden rounded-lg border border-white/10 bg-[#f8f4e8] text-[#111111]">
         <div className="bg-[#070707] p-6 text-[#f8f4e8]">
-          <div className="inline-grid h-12 w-12 place-items-center rounded-md bg-[#d6b15e] text-lg font-black text-[#070707]">KG</div>
+          <MonogramLogo size="md" />
           <h1 className="mt-4 text-2xl font-black">Kagiso Gabonamong</h1>
           <p className="text-sm text-[#cfc8b5]">Order confirmation from Gaborone, Botswana</p>
         </div>

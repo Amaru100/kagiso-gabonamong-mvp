@@ -2,6 +2,7 @@ import { Menu, ShoppingBag, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import MonogramLogo from './MonogramLogo.jsx'
 
 const links = [
   ['Home', '/'],
@@ -24,7 +25,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <NavLink to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          <span className="grid h-11 w-11 place-items-center rounded-md border border-[#d6b15e]/50 bg-[#d6b15e] text-lg font-black text-[#070707]">KG</span>
+          <MonogramLogo size="sm" />
           <span className="hidden text-sm font-bold uppercase tracking-[0.22em] text-[#f8f4e8] sm:block">Kagiso Gabonamong</span>
         </NavLink>
 

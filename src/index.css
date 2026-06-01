@@ -38,3 +38,10 @@ select {
 .focus-ring:focus {
   box-shadow: 0 0 0 3px rgba(214, 177, 94, 0.35);
 }
+
+.kg-monogram {
+  font-family: "Cormorant Garamond", "Cinzel", "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: 0;
+}
