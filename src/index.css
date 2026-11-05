@@ -86,73 +86,6 @@ button:disabled {
   letter-spacing: 0.16em;
   color: #a6cfb7;
 }
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #8dc6a7;
-  box-shadow: 0 0 0 5px #06402b50;
-  flex-shrink: 0;
-}
-.editorial-hero {
-  max-width: 1280px;
-  margin: auto;
-  padding: 82px 32px 72px;
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  align-items: center;
-  gap: 62px;
-}
-.hero-copy h1 {
-  margin-top: 24px;
-  max-width: 620px;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-weight: 600;
-  font-size: clamp(56px, 5.7vw, 82px);
-  line-height: 0.99;
-  letter-spacing: -0.045em;
-}
-.hero-description {
-  max-width: 440px;
-  margin-top: 26px;
-  font-size: 16px;
-  line-height: 1.9;
-  color: #bbc6bf;
-}
-.hero-note {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 56px;
-  color: #9aada1;
-  font-size: 11px;
-}
-.hero-art {
-  border: 1px solid #47735a60;
-  border-radius: 3px;
-  overflow: hidden;
-  background: #eeeee8;
-  transform: rotate(1.5deg);
-}
-.hero-art img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1.14;
-  object-fit: cover;
-}
-.art-caption {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 16px 20px;
-  border-top: 1px solid #192d2226;
-  font:
-    9px/1.5 ui-monospace,
-    monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #46544b;
-}
 .section-title,
 .display-heading {
   font-family: "Cormorant Garamond", Georgia, serif;
@@ -370,47 +303,12 @@ textarea.admin-input {
   width: 100%;
 }
 @media (max-width: 1023px) {
-  .editorial-hero {
-    gap: 32px;
-    padding: 60px 24px;
-  }
-  .hero-copy h1 {
-    font-size: 62px;
-  }
-  .hero-art img {
-    aspect-ratio: 0.9;
-  }
-  .hero-copy .eyebrow {
-    font-size: 9px;
-  }
   .author-inner {
     gap: 40px;
     grid-template-columns: 210px 1fr;
   }
 }
 @media (max-width: 767px) {
-  .editorial-hero {
-    grid-template-columns: 1fr;
-    gap: 44px;
-    padding: 44px 24px 48px;
-  }
-  .hero-copy h1 {
-    font-size: clamp(52px, 12.5vw, 76px);
-    max-width: 520px;
-  }
-  .hero-note {
-    margin-top: 32px;
-  }
-  .hero-art {
-    transform: none;
-  }
-  .hero-art img {
-    aspect-ratio: 1.65;
-  }
-  .art-caption {
-    font-size: 8px;
-    padding: 12px;
-  }
   .author-inner {
     grid-template-columns: 1fr;
     gap: 36px;
@@ -455,4 +353,459 @@ textarea.admin-input {
   font-weight: 700;
   line-height: 0.8;
   letter-spacing: 0;
+}
+
+/* A writer's index: short introductions, visible work, and quiet rules. */
+.writer-home {
+  max-width: 1184px;
+  margin: auto;
+  padding: 0 32px;
+}
+.writer-intro {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 100px;
+  padding: 82px 0 74px;
+  align-items: start;
+}
+.writer-introduction h1 {
+  max-width: 550px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(68px, 7vw, 104px);
+  font-weight: 500;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+}
+.writer-introduction > p {
+  max-width: 390px;
+  margin: 30px 0 24px;
+  font-size: 16px;
+  line-height: 1.9;
+  color: #bbc6bf;
+}
+.text-link {
+  display: inline-block;
+  padding: 8px 0;
+  min-height: 40px;
+  font-size: 13px;
+  line-height: 1.8;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-color: #668775;
+}
+.text-link:hover {
+  text-decoration-color: #c8dccf;
+  color: #c8dccf;
+}
+.featured-writing > a {
+  display: block;
+}
+.featured-writing img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.writing-meta {
+  margin: 20px 0 10px;
+  color: #a1b4a8;
+  font:
+    11px/1.6 ui-monospace,
+    monospace;
+}
+.featured-writing h2,
+.writing-row h3,
+.journal-card h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+.featured-writing h2 a:hover,
+.writing-row h3 a:hover,
+.journal-card h3 a:hover {
+  color: #a6cfb7;
+}
+.featured-excerpt {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #bbc6bf;
+}
+.editorial-section {
+  border-top: 1px solid #ffffff24;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 64px;
+  padding: 54px 0 64px;
+}
+.section-margin h2 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.section-margin > p {
+  color: #9eafa4;
+  font-size: 13px;
+  line-height: 1.85;
+  margin: 16px 0;
+  max-width: 200px;
+}
+.writing-index {
+  margin-top: -5px;
+}
+.writing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 156px;
+  gap: 32px;
+  align-items: center;
+  padding: 26px 0;
+  border-bottom: 1px solid #ffffff15;
+}
+.writing-row:first-child {
+  padding-top: 0;
+}
+.writing-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.writing-row .writing-meta {
+  margin-top: 0;
+}
+.writing-row > div > p:last-child {
+  color: #bbc6bf;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.writing-row img {
+  width: 156px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+.editorial-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.editorial-resource-grid > article {
+  border: 0;
+  border-top: 1px solid #ffffff15;
+  padding: 22px 0 12px;
+  background: transparent;
+  border-radius: 0;
+}
+.editorial-resource-grid > article:nth-child(-n + 2) {
+  border-top: 0;
+  padding-top: 0;
+}
+.editorial-resource-grid .eyebrow,
+.editorial-resource-grid article > p:first-child {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: #a1b4a8;
+}
+.editorial-resource-grid article h3 {
+  font-weight: 500;
+}
+.journal-card {
+  padding-bottom: 24px;
+  border-bottom: 1px solid #ffffff20;
+}
+.journal-card > a:first-child {
+  display: block;
+}
+.journal-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.journal-card h3 {
+  font-size: 28px;
+}
+.journal-excerpt {
+  margin: 14px 0 12px;
+  color: #bbc6bf;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+.book-cover {
+  width: 88px;
+  height: 136px;
+  object-fit: contain;
+  object-position: left bottom;
+  margin-bottom: 22px;
+  filter: drop-shadow(4px 6px 4px #0005);
+}
+.book-cover-fallback {
+  padding: 12px;
+  background: #06402b;
+  border-left: 4px solid #0b5a3d;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font:
+    18px/1.1 Georgia,
+    serif;
+  overflow-wrap: anywhere;
+}
+.book-cover-fallback small {
+  font:
+    9px/1.4 system-ui,
+    sans-serif;
+}
+.book-note h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 6px 0 12px;
+}
+.book-author {
+  color: #a1b4a8;
+  font-size: 11px;
+}
+.book-reason {
+  color: #bbc6bf;
+  font-size: 13px;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+.sample-note {
+  margin: 0 0 28px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #a1b4a8;
+}
+.books-page {
+  padding-top: 64px;
+}
+.books-page-title {
+  font:
+    500 clamp(48px, 6vw, 72px) / 1 "Cormorant Garamond",
+    Georgia,
+    serif;
+  margin-bottom: 48px;
+  letter-spacing: -0.03em;
+}
+.work-page {
+  max-width: 1184px;
+  margin: auto;
+  padding: 64px 32px 80px;
+}
+.work-heading {
+  max-width: 620px;
+  padding-bottom: 48px;
+}
+.work-heading h1 {
+  font:
+    500 clamp(48px, 6vw, 72px) / 1 "Cormorant Garamond",
+    Georgia,
+    serif;
+  letter-spacing: -0.03em;
+}
+.work-heading > p {
+  margin-top: 24px;
+  color: #bbc6bf;
+  font-size: 16px;
+  line-height: 1.9;
+}
+.work-layout {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 80px;
+  border-top: 1px solid #ffffff24;
+  padding-top: 40px;
+}
+.service-label {
+  font-size: 12px;
+  color: #a1b4a8;
+  margin-bottom: 16px;
+}
+.service-list {
+  display: grid;
+}
+.service-list button {
+  padding: 22px 0;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid #ffffff20;
+  font:
+    500 24px/1.2 "Cormorant Garamond",
+    Georgia,
+    serif;
+  text-align: left;
+}
+.service-list button[aria-pressed="true"] {
+  color: #b0d0bb;
+  border-bottom-color: #56866b;
+}
+.service-selected {
+  font:
+    11px/1.5 system-ui,
+    sans-serif;
+  color: #a1b4a8;
+}
+.work-layout form {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.catalog-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 0 24px;
+  border-bottom: 1px solid #ffffff20;
+}
+.catalog-note h3 {
+  font:
+    600 27px/1.15 "Cormorant Garamond",
+    Georgia,
+    serif;
+}
+.catalog-note .writing-meta {
+  margin-top: 0;
+}
+.catalog-details {
+  margin-top: 18px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #a1b4a8;
+}
+.catalog-description {
+  margin: 16px 0 14px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #bbc6bf;
+  flex: 1;
+}
+.catalog-note .text-link {
+  margin-top: auto;
+}
+@media (max-width: 1023px) {
+  .writer-intro {
+    gap: 48px;
+    padding-top: 64px;
+  }
+  .editorial-section {
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 40px;
+  }
+  .writing-row {
+    grid-template-columns: minmax(0, 1fr) 120px;
+    gap: 24px;
+  }
+  .writing-row img {
+    width: 120px;
+  }
+  .book-list {
+    gap: 22px;
+  }
+  .work-layout {
+    gap: 40px;
+  }
+}
+@media (max-width: 767px) {
+  .writer-home {
+    padding: 0 24px;
+  }
+  .writer-intro {
+    grid-template-columns: 1fr;
+    padding: 42px 0;
+    gap: 40px;
+  }
+  .writer-introduction h1 {
+    font-size: clamp(64px, 15vw, 86px);
+    max-width: 500px;
+  }
+  .writer-introduction > p {
+    margin-top: 22px;
+    font-size: 15px;
+  }
+  .featured-writing h2 {
+    font-size: 30px;
+  }
+  .editorial-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    padding: 36px 0 44px;
+  }
+  .section-margin h2 {
+    font-size: 34px;
+  }
+  .section-margin > p {
+    max-width: 300px;
+    margin: 12px 0 4px;
+  }
+  .writing-row {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 18px;
+  }
+  .writing-row img {
+    width: 84px;
+    aspect-ratio: 1;
+  }
+  .writing-row h3 {
+    font-size: 26px;
+  }
+  .writing-row > div > p:last-child {
+    display: none;
+  }
+  .editorial-resource-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .editorial-resource-grid > article:nth-child(2) {
+    border-top: 1px solid #ffffff15;
+    padding-top: 22px;
+  }
+  .book-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+  .book-note {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+  }
+  .book-cover {
+    width: 76px;
+    height: 116px;
+    margin: 0;
+  }
+  .book-note h3 {
+    font-size: 26px;
+  }
+  .sample-note {
+    margin-bottom: 24px;
+  }
+  .books-page {
+    padding-top: 40px;
+  }
+  .work-page {
+    padding: 40px 24px 56px;
+  }
+  .work-heading {
+    padding-bottom: 32px;
+  }
+  .work-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    padding-top: 30px;
+  }
 }

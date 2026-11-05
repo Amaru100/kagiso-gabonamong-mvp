@@ -9,6 +9,7 @@ import Resources from "./pages/Resources.jsx";
 import PremiumStore from "./pages/PremiumStore.jsx";
 import Events from "./pages/Events.jsx";
 import Writing from "./pages/Writing.jsx";
+import Books from "./pages/Books.jsx";
 import Admin from "./pages/Admin.jsx";
 import AuthorSection from "./components/AuthorSection.jsx";
 import WorkWithMe from "./pages/WorkWithMe.jsx";
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/writings" element={<Writings />} />
           <Route path="/writings/:id" element={<Writing />} />
+          <Route path="/books" element={<Books />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/premium-store" element={<PremiumStore />} />
           <Route path="/events" element={<Events />} />

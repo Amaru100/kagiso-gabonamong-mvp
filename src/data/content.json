@@ -167,10 +167,45 @@
     "authorName": "Kagiso Gabonamong",
     "authorBio": "",
     "authorPhoto": "",
-    "heroTitle": "Think clearly. Build with purpose.",
-    "heroDescription": "Writings, practical resources, and conversations on mindset, leadership, and meaningful work.",
+    "heroTitle": "Kagiso Gabonamong",
+    "heroDescription": "I write about mindset, leadership, and building a business. Here you'll find my writings, resources, and upcoming events.",
     "email": "hello@kagisogabonamong.com",
     "phone": "+267 71 000 000",
     "location": "Gaborone, Botswana"
-  }
+  },
+  "books": [
+    {
+      "id": "atomic-habits",
+      "title": "Atomic Habits",
+      "author": "James Clear",
+      "kind": "recommended",
+      "cover": "/books/atomic-habits.jpg",
+      "description": "A practical look at how small, repeatable changes shape our habits. A starting point for thinking about consistency rather than relying on motivation.",
+      "url": "",
+      "sample": true,
+      "published": true
+    },
+    {
+      "id": "deep-work",
+      "title": "Deep Work",
+      "author": "Cal Newport",
+      "kind": "recommended",
+      "cover": "/books/deep-work.jpg",
+      "description": "On making time for focused work in a distracted day. Useful for thinking through what deserves your attention and what can wait.",
+      "url": "",
+      "sample": true,
+      "published": true
+    },
+    {
+      "id": "meditations",
+      "title": "Meditations",
+      "author": "Marcus Aurelius",
+      "kind": "recommended",
+      "cover": "/books/meditations.jpg",
+      "description": "Personal reflections on judgement, responsibility, and how to respond to difficulty. A book to read slowly, a few pages at a time.",
+      "url": "",
+      "sample": true,
+      "published": true
+    }
+  ]
 }

@@ -11,10 +11,30 @@ process.env.CONTENT_FILE = join(directory, "content.json");
 process.env.OWNER_PASSWORD = "test-only-owner-password-42";
 delete process.env.VERCEL;
 delete process.env.CONTENT_GITHUB_TOKEN;
-const { default: handler, contentHandler } =
-  await import("../server/admin-handler.js");
+const { default: handler, contentHandler } = await import(
+  "../server/admin-handler.js"
+);
 const { publicContent } = await import("../server/validation.js");
+const { validateContent } = await import("../server/validation.js");
 after(() => rm(directory, { recursive: true, force: true }));
+test("book content remains compatible with older content files and validates covers and types", () => {
+  const legacy = structuredClone(fixture);
+  delete legacy.books;
+  assert.deepEqual(publicContent(legacy).books, []);
+  assert.deepEqual(validateContent(legacy).books, []);
+  const content = structuredClone(fixture);
+  content.books[0].cover = "javascript:alert(1)";
+  assert.throws(() => validateContent(content), /HTTPS/);
+  content.books[0].cover = "/books/atomic-habits.jpg";
+  content.books[0].kind = "unexpected";
+  assert.throws(() => validateContent(content), /book type/);
+  content.books[0].kind = "recommended";
+  content.books[0].published = false;
+  assert.equal(
+    publicContent(validateContent(content)).books.length,
+    fixture.books.length - 1,
+  );
+});
 beforeEach(() => writeFile(process.env.CONTENT_FILE, JSON.stringify(fixture)));
 async function call(method, body, cookie, extra = {}, target = handler) {
   const headers = {};
@@ -238,15 +258,22 @@ test("repeated incorrect passwords are rate limited", async () => {
   );
 });
 test("malformed JSON is rejected and production without publishing secrets serves a public snapshot", async () => {
-  assert.equal((await call('POST', '{broken')).status, 400)
-  process.env.VERCEL = '1'
+  assert.equal((await call("POST", "{broken")).status, 400);
+  process.env.VERCEL = "1";
   try {
-    const signedIn = await call('POST', { password: process.env.OWNER_PASSWORD })
-    assert.match(signedIn.headers['set-cookie'], /; Secure/)
-    const cookie = signedIn.headers['set-cookie'].split(';')[0]
-    assert.equal((await call('GET', null, cookie)).status, 503)
-    const publicResult = await call('GET', null, null, {}, contentHandler)
-    assert.equal(publicResult.status, 200)
-    assert.equal(publicResult.body.content.settings.authorName, fixture.settings.authorName)
-  } finally { delete process.env.VERCEL }
-})
+    const signedIn = await call("POST", {
+      password: process.env.OWNER_PASSWORD,
+    });
+    assert.match(signedIn.headers["set-cookie"], /; Secure/);
+    const cookie = signedIn.headers["set-cookie"].split(";")[0];
+    assert.equal((await call("GET", null, cookie)).status, 503);
+    const publicResult = await call("GET", null, null, {}, contentHandler);
+    assert.equal(publicResult.status, 200);
+    assert.equal(
+      publicResult.body.content.settings.authorName,
+      fixture.settings.authorName,
+    );
+  } finally {
+    delete process.env.VERCEL;
+  }
+});

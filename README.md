@@ -1,6 +1,6 @@
 ﻿# Kagiso Gabonamong
 
-An editorial website for writings, resources, events, and enquiries, with an owner workspace at `/admin`.
+An editorial website for writings, recommended books, resources, events, and enquiries, with an owner workspace at `/admin`. Future books by Kagiso can also be managed there; that section appears only when a book is published.
 
 ## Stack
 
@@ -37,12 +37,13 @@ Browser tests use temporary content and a test-only password. They never edit th
 
 ## Content and design
 
-- `src/data/content.json`: authoritative writings, events, resources, guides, and settings.
+- `src/data/content.json`: authoritative writings, books, events, resources, guides, and settings.
 - `src/pages/Admin.jsx`: owner workspace.
 - `server/`: validation, authentication, and durable publishing.
 - `api/`: Vercel functions.
 - `public/art/`: six original, replaceable monochrome cover studies.
 - [Design specification](docs/design-spec.md).
+- [Current editorial revision and design references](docs/editorial-revision.md).
 - [Owner guide and hosting setup](docs/owner-guide.md).
 
 The accent is `#06402B`. Testimonials, cart, checkout, orders, and payment methods have been removed. Enquiries open the visitor's email app. Author portrait and biography will be added when supplied. Current writings are previews until full text is provided.

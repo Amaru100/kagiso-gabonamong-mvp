@@ -18,14 +18,13 @@ export default function AuthorSection() {
           )}
         </div>
         <div>
-          <p className="eyebrow">The person behind the words</p>
           <h2 id="author-heading" className="display-heading">
-            About the author.
+            About the author
           </h2>
           <h3 className="mt-5 text-xl font-semibold">{settings.authorName}</h3>
           <p className="mt-4 max-w-2xl whitespace-pre-line leading-8 text-[#bbc6bf]">
             {settings.authorBio ||
-              "His story, in his own words. A fuller introduction and personal photographs will be shared here soon."}
+              "A biography and photograph will be added here soon."}
           </p>
           <p className="mt-5 text-sm text-[#99b7a7]">{settings.location}</p>
         </div>

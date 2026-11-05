@@ -1,6 +1,6 @@
 # Owner workspace
 
-Open **/admin**, or choose **Owner login** in the footer. Enter the owner password. The workspace manages writings, events, free resources, guides, homepage text, contact details, author story, and portrait. No coding or developer is needed for regular content updates once the hosting setup below is complete.
+Open **/admin**, or choose **Owner login** in the footer. Enter the owner password. The workspace manages writings, books, events, free resources, guides, homepage text, contact details, author story, and portrait. No coding or developer is needed for regular content updates once the hosting setup below is complete.
 
 ## Regular use
 
@@ -14,6 +14,12 @@ Open **/admin**, or choose **Owner login** in the footer. Enter the owner passwo
 **Remove** asks for confirmation and takes effect on publishing. Deleting a writing removes its public URL. Keep the URL ID unchanged when editing an existing article unless you intend to change its address. IDs must be unique, lowercase letters/numbers/hyphens. The workspace supports up to 500 entries per collection and a 900KB total publish request. Split very large content libraries into a dedicated CMS when necessary.
 
 If another session publishes while you edit, your save is rejected instead of overwriting their changes. Copy your pending edits somewhere safe, reload, and reapply them to the latest content. If a session expires, retain/copy any pending text and sign in again. Browser refreshes warn before discarding unpublished work.
+
+## Adding books
+
+Choose **Books → Add book**. Enter the title, author, cover URL, and a short explanation in **Why recommend it / book description**. You can add an optional HTTPS details link. Select **Recommended book** for the reading list immediately after the homepage writings. Choose **Kagiso's own book** for his future publications; the public own-book section appears only after at least one is published.
+
+The initial Atomic Habits, Deep Work, and Meditations entries are samples, not his confirmed endorsements. Edit or remove them when he shares his list. Clear **Sample selection, awaiting approval** once he approves an entry. Use **Visible on website** and **Publish changes** to make it public. Books support the same reorder, hide, delete and conflict protection as writings.
 
 ## One-time local setup
 

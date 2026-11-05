@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Mail, MapPin, Phone } from "lucide-react";
 import MonogramLogo from "./MonogramLogo.jsx";
 import { useContent } from "../context/ContentContext.jsx";
 
@@ -13,8 +12,7 @@ export default function Footer() {
         <div>
           <MonogramLogo size="md" className="mb-4" />
           <p className="max-w-sm text-sm leading-6 text-[#bbc6bf]">
-            Short writings, practical resources, and powerful seminars for
-            people building with clarity from Gaborone, Botswana.
+            Writings, books, and events from {settings.authorName}.
           </p>
         </div>
         <div>
@@ -23,6 +21,7 @@ export default function Footer() {
           </h3>
           <div className="grid gap-2 text-sm text-[#bbc6bf]">
             <Link to="/writings">Writings</Link>
+            <Link to="/books">Books & reading</Link>
             <Link to="/resources">Resources</Link>
             <Link to="/premium-store">Guides</Link>
             <Link to="/events">Events</Link>
@@ -35,25 +34,25 @@ export default function Footer() {
           </h3>
           <div className="grid gap-3 text-sm text-[#bbc6bf]">
             <span className="inline-flex items-center gap-2">
-              <MapPin size={16} /> {settings.location}
+              {settings.location}
             </span>
             <a
               href={`mailto:${settings.email}`}
               className="inline-flex items-center gap-2"
             >
-              <Mail size={16} /> {settings.email}
+              {settings.email}
             </a>
             <a
               href={`tel:${settings.phone.replace(/\s/g, "")}`}
               className="inline-flex items-center gap-2"
             >
-              <Phone size={16} /> {settings.phone}
+              {settings.phone}
             </a>
           </div>
         </div>
       </div>
       <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-[#98aaa0]">
-        &copy; 2026 Samkele Muzila.
+        &copy; 2026 Muzila Designs.
       </div>
     </footer>
   );

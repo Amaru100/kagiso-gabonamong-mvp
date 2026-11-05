@@ -1,31 +1,21 @@
 # Visual and functional review
 
-Compared the original committed site in a separate temporary checkout with the revised site. Viewed desktop (1440×900), mobile (390×844), and owner dashboard screenshots. Screenshots remain in the ignored `artifacts/` folder.
+The current revision was checked visually at 1440px and 390px. Viewed the homepage, the text-only Work With Me service list, and the Books editor. Screenshots are in the ignored artifacts folder: desktop-viewport.png, desktop.png, mobile.png, work-with-me.png, and books-admin.png.
 
-The reference blog was reviewed directly, including an actual cover image. The resulting six SVG illustrations are original temporary line studies. They echo the monochrome paper-and-engraving direction without copying the reference artwork. They remain deliberately provisional until the complete writings arrive.
+The reference sites were opened and captured: Craig Mod, Austin Kleon, and Derek Sivers. The implementation prioritises actual writing and books, uses left-aligned headings and separators, removes the decorative hero panel and slogans, and keeps the requested forest-green brand.
 
-## Changes from the visual review
+## Review observations
 
-- The long author name and eight navigation links crowded the header at intermediate sizes. The menu now collapses below 1280px, preserving the 44px mobile button.
-- Section headings started at zero opacity, producing empty areas in a full-page capture before scrolling. They now stay visible and move 14px into position, with no movement for reduced-motion users.
-- The original hero had three competing actions and a long heading. The revision uses a shorter editorial headline, two actions, one monochrome artwork and a quiet caption. At mobile widths the cover flattens to a 1.65 aspect ratio, with 24px side padding.
-- Deep green is too dark as small text against the dark background. Exact #06402B is used on primary buttons and the author panel; light green companion tones keep labels and focus states readable.
+- The homepage now starts with the author name and a real writing preview instead of a marketing slogan and decorative illustration.
+- The article index is readable as a list with small monochrome illustrations. Book covers remain small, with the title, author and an explanatory note beside or below them.
+- Recommended books appear directly after writings. The sample-selection notice avoids claiming personal endorsements before Kagiso supplies his list.
+- The Work With Me service choices contain text and an accessible selected state; no decorative icons or check marks.
+- No mobile horizontal overflow was detected by the browser checks. The Books workspace includes the complete editing fields and an own/recommended selector.
 
-## Rubric
+Rubric scores: first glance 8, signature 7, typography 9, composition 8, colour 8, media 8, motion 8, mobile 8, copy 8, polish 8. Average 8.0; nothing below 7. The pending author photography, full writings, and approved reading list remain the main limitations.
 
-| Area | Score / 10 | Observation |
-| --- | --- | --- |
-| First glance | 8 | Clear headline and one visual focal point |
-| Signature | 7 | Original engraved doorway; final writing-specific art will improve it |
-| Typography | 9 | Serif headings, restrained body type, consistent hierarchy |
-| Composition | 8 | Generous spacing and bounded content widths |
-| Colour | 8 | Forest green with readable pale-green text |
-| Media | 7 | Cohesive placeholders; author photography is still pending |
-| Motion | 8 | Restrained reveals and reduced-motion support |
-| Mobile | 9 | Stacked layout, no detected overflow, usable dashboard controls |
-| Copy | 8 | Clear enquiry actions and honest unavailable-content states |
-| Polish | 8 | Focus states, consistent covers, no broken local images |
+## Validation
 
-Average: 8.0, with no score below 7. Remaining visual improvements depend on the actual writings, approved author biography, and photographs.
+Eight backend tests and three browser tests pass, plus the production build. Browser coverage includes public routes, mobile navigation, removed homepage copy, footer credit, no service SVGs, enquiry subjects, recommendation order, author information, book creation/editing/persistence, future own-book visibility, unpublishing/deletion, writing CRUD, and logout.
 
-Functional checks cover public routes, individual writings, mobile navigation, enquiry subjects, removed checkout routes, dashboard CRUD, publishing, visibility, reordering, saved content after refresh, author settings, logout, authentication, URL validation, conflicting revisions, rate limiting, and GitHub publishing requests. Browser tests use temporary content files and a test-only password. Live GitHub publishing requires hosting secrets; the GitHub write contract is tested with a mocked response rather than a real production content commit.
+Backend coverage includes authentication, draft filtering, invalid asset URLs, revision conflicts, legacy content without books, book-type validation, GitHub write payloads, login throttling, malformed requests, and production fallback behaviour. Browser tests edit temporary content, not the real content file. Actual Vercel publishing still needs the hosting credentials described in owner-guide.md.

@@ -1,16 +1,33 @@
-export const collections = ["articles", "events", "products", "resources"];
+export const collections = [
+  "articles",
+  "events",
+  "products",
+  "resources",
+  "books",
+];
 export function publicContent(content) {
   return {
     ...content,
     ...Object.fromEntries(
       collections.map((key) => [
         key,
-        content[key].filter((item) => item.published !== false),
+        (content[key] || []).filter((item) => item.published !== false),
       ]),
     ),
   };
 }
 const fields = {
+  books: [
+    "id",
+    "title",
+    "author",
+    "kind",
+    "cover",
+    "description",
+    "url",
+    "sample",
+    "published",
+  ],
   articles: [
     "id",
     "title",
@@ -73,6 +90,8 @@ export function validateContent(value) {
     throw new Error("Invalid content.");
   const result = {};
   for (const key of collections) {
+    if (key === "books" && value.books === undefined)
+      value = { ...value, books: [] };
     if (!Array.isArray(value[key]) || value[key].length > 500)
       throw new Error(`Invalid ${key} collection.`);
     const ids = new Set();
@@ -93,6 +112,18 @@ export function validateContent(value) {
       const clean = {};
       for (const field of fields[key]) {
         const entry = item[field];
+        if (field === "sample") {
+          if (entry !== undefined && typeof entry !== "boolean")
+            throw new Error("Invalid sample selection.");
+          clean[field] = entry === true;
+          continue;
+        }
+        if (key === "books" && field === "kind") {
+          if (entry && !["recommended", "own"].includes(entry))
+            throw new Error("Choose recommended or own for the book type.");
+          clean[field] = entry || "recommended";
+          continue;
+        }
         if (field === "published") {
           clean[field] = entry !== false;
           continue;
@@ -108,7 +139,7 @@ export function validateContent(value) {
         clean[field] = entry || "";
         if (clean[field].length > (field === "body" ? 150000 : 5000))
           throw new Error(`${field} is too long.`);
-        if (["url", "image"].includes(field) && !safeUrl(clean[field]))
+        if (["url", "image", "cover"].includes(field) && !safeUrl(clean[field]))
           throw new Error("Use an HTTPS URL or a local asset path.");
       }
       return clean;

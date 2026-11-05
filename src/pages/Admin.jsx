@@ -12,12 +12,22 @@ import {
 import { useContent } from "../context/ContentContext.jsx";
 const sections = {
   articles: "Writings",
+  books: "Books",
   events: "Events",
   resources: "Resources",
   products: "Guides",
   settings: "Site & author",
 };
 const fields = {
+  books: [
+    ["title", "Title"],
+    ["id", "ID"],
+    ["author", "Author"],
+    ["kind", "Book type", "bookType"],
+    ["cover", "Book cover URL"],
+    ["description", "Why recommend it / book description", "textarea"],
+    ["url", "Book details URL (optional)"],
+  ],
   articles: [
     ["title", "Title"],
     ["id", "URL ID"],
@@ -88,7 +98,7 @@ export default function Admin() {
   const [dirty, setDirty] = useState(false);
   const load = async () => {
     const result = await request();
-    setDraft(result.content);
+    setDraft({ ...result.content, books: result.content.books || [] });
     setRevision(result.revision);
     setDirty(false);
   };
@@ -169,6 +179,8 @@ export default function Admin() {
         image: "/art/cover-1.svg",
         readingTime: "4 min read",
       });
+    if (section === "books")
+      Object.assign(item, { kind: "recommended", sample: false });
     setDraft({ ...draft, [section]: [...draft[section], item] });
     setSelected(draft[section].length);
     setDirty(true);
@@ -219,9 +231,9 @@ export default function Admin() {
           ← Back to website
         </Link>
         <p className="eyebrow mt-16">Kagiso Gabonamong / Private workspace</p>
-        <h1 className="display-heading mt-4">Make it yours.</h1>
+        <h1 className="display-heading mt-4">Owner login</h1>
         <p className="mt-5 leading-7 text-[#bbc6bf]">
-          Manage your writings, events, resources, and author details.
+          Add and edit writings, books, events, resources, and author details.
         </p>
         <form onSubmit={signIn} className="mt-8 grid gap-4">
           <label className="admin-label">
@@ -254,9 +266,7 @@ export default function Admin() {
         <header className="admin-topbar">
           <div>
             <p className="eyebrow">Owner workspace</p>
-            <h1 className="mt-2 text-2xl font-semibold">
-              Your words. Your space.
-            </h1>
+            <h1 className="mt-2 text-2xl font-semibold">Manage the website</h1>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <a
@@ -351,7 +361,9 @@ export default function Admin() {
                           ? "writing"
                           : section === "events"
                             ? "event"
-                            : "resource")}
+                            : section === "books"
+                              ? "book"
+                              : "resource")}
                   </h2>
                   {section !== "settings" && (
                     <div className="flex gap-2">
@@ -390,10 +402,31 @@ export default function Admin() {
                   </label>
                 )}
                 <div className="grid gap-5">
+                  {section === "books" && (
+                    <label className="mb-2 flex min-h-11 items-center gap-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={item.sample === true}
+                        onChange={(event) =>
+                          change("sample", event.target.checked)
+                        }
+                      />{" "}
+                      Sample selection, awaiting approval
+                    </label>
+                  )}
                   {fields[section].map(([key, label, type]) => (
                     <label key={key} className="admin-label">
                       {label}
-                      {type ? (
+                      {type === "bookType" ? (
+                        <select
+                          className="admin-input"
+                          value={item[key] || "recommended"}
+                          onChange={(event) => change(key, event.target.value)}
+                        >
+                          <option value="recommended">Recommended book</option>
+                          <option value="own">Kagiso's own book</option>
+                        </select>
+                      ) : type ? (
                         <textarea
                           rows={type === "body" ? 14 : 3}
                           className="admin-input"
@@ -410,6 +443,24 @@ export default function Admin() {
                     </label>
                   ))}
                 </div>
+                {section === "books" && (
+                  <div className="mt-7">
+                    <p className="text-sm leading-7 text-[#a5b9ac]">
+                      Recommended books appear after the writings on the
+                      homepage. Choose “Kagiso's own book” for future
+                      publications; that section appears only when you publish
+                      one. Cover and details links can use hosted HTTPS URLs.
+                      Remove the sample flag after Kagiso approves a selection.
+                    </p>
+                    {item.cover && (
+                      <img
+                        src={item.cover}
+                        alt="Book cover preview"
+                        className="mt-5 max-h-52 max-w-40 object-contain"
+                      />
+                    )}
+                  </div>
+                )}
                 {section === "articles" && (
                   <div className="mt-7">
                     <p className="admin-label mb-3">Choose a temporary cover</p>
