@@ -1,55 +1,50 @@
-# Kagiso Gabonamong MVP Website
+﻿# Kagiso Gabonamong
 
-A premium React MVP website for Kagiso Gabonamong, a writer, speaker, seminar/webinar host, and motivation and business content creator based in Gaborone, Botswana.
+An editorial website for writings, resources, events, and enquiries, with an owner workspace at `/admin`.
 
-## Tech Stack
+## Stack
 
-- React
-- Vite
-- Tailwind CSS
-- React Router
-- lucide-react
-- framer-motion
-- Local React Context cart state
+React, Vite, Tailwind CSS, React Router, Framer Motion, Lucide icons. Vercel Node functions provide owner authentication and GitHub-backed content publishing. Development saves content to a local JSON file.
 
-## Setup
+## Run
 
-```bash
+```powershell
 npm install
-```
-
-## Run Locally
-
-```bash
+Copy-Item .env.example .env.local
+# Set OWNER_PASSWORD in .env.local (minimum 16 characters).
 npm run dev
 ```
 
-## Build
+The public website works without secrets. Owner access requires the password; publishing on Vercel also requires a repository-scoped token. Follow [the owner and hosting guide](docs/owner-guide.md) for the complete setup.
 
-```bash
+## Validate
+
+```powershell
+npm test
+npx playwright install chromium
+npm run test:e2e
 npm run build
 ```
 
-## Deploy To Vercel
+To use an installed Edge browser instead of downloading Chromium:
 
-```bash
-npx vercel --prod --token $env:VERCEL_TOKEN
+```powershell
+$env:PLAYWRIGHT_CHANNEL = 'msedge'
+npm run test:e2e
 ```
 
-Use Vite settings:
+Browser tests use temporary content and a test-only password. They never edit the real content file. Screenshots appear in the ignored `artifacts` folder.
 
-- Build command: `npm run build`
-- Output directory: `dist`
+## Content and design
 
-## MVP Notes
+- `src/data/content.json`: authoritative writings, events, resources, guides, and settings.
+- `src/pages/Admin.jsx`: owner workspace.
+- `server/`: validation, authentication, and durable publishing.
+- `api/`: Vercel functions.
+- `public/art/`: six original, replaceable monochrome cover studies.
+- [Design specification](docs/design-spec.md).
+- [Owner guide and hosting setup](docs/owner-guide.md).
 
-This is a demo MVP website with static content only. There is no backend, no login, no user accounts, no Supabase, and no real email sending.
+The accent is `#06402B`. Testimonials, cart, checkout, orders, and payment methods have been removed. Enquiries open the visitor's email app. Author portrait and biography will be added when supplied. Current writings are previews until full text is provided.
 
-## Payment Warning
-
-Payment methods are placeholders for MVP demo purposes only. The checkout does not process real payments.
-
-## Location And Currency
-
-- Location: Gaborone, Botswana
-- Currency: BWP
+Vercel builds with `npm run build` and serves `dist`, plus the `/api` functions. `npm run preview` previews the static build only; use `npm run dev` to exercise owner publishing locally. Always pull before making changes because production content publishing creates GitHub commits.

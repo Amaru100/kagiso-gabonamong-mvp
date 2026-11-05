@@ -1,0 +1,176 @@
+{
+  "articles": [
+    {
+      "id": "discipline-dividend-dreams",
+      "title": "Discipline is the Dividend of Dreams",
+      "category": "Motivation",
+      "readingTime": "4 min read",
+      "excerpt": "Dreams become serious when discipline turns intention into daily evidence.",
+      "image": "/art/cover-1.svg",
+      "body": "",
+      "published": true
+    },
+    {
+      "id": "mindset-builder",
+      "title": "The Mindset of a Builder",
+      "category": "Mindset",
+      "readingTime": "5 min read",
+      "excerpt": "Builders think in seasons, systems, and service. They keep improving while others wait for permission.",
+      "image": "/art/cover-2.svg",
+      "body": "",
+      "published": true
+    },
+    {
+      "id": "systems-create-freedom",
+      "title": "Systems Create Freedom",
+      "category": "Business growth",
+      "readingTime": "3 min read",
+      "excerpt": "Freedom is not the absence of structure. It is the reward of structure that works.",
+      "image": "/art/cover-3.svg",
+      "body": "",
+      "published": true
+    },
+    {
+      "id": "start-small-think-long-term",
+      "title": "Start Small. Think Long Term.",
+      "category": "Entrepreneurship",
+      "readingTime": "4 min read",
+      "excerpt": "Small starts build momentum when they are connected to a larger vision and repeated with focus.",
+      "image": "/art/cover-4.svg",
+      "body": "",
+      "published": true
+    },
+    {
+      "id": "clarity-creates-momentum",
+      "title": "Clarity Creates Momentum",
+      "category": "Clarity",
+      "readingTime": "4 min read",
+      "excerpt": "The next step becomes easier when the destination and the reason are clear.",
+      "image": "/art/cover-5.svg",
+      "body": "",
+      "published": true
+    },
+    {
+      "id": "leadership-is-influence",
+      "title": "Leadership is Influence",
+      "category": "Leadership",
+      "readingTime": "5 min read",
+      "excerpt": "Leadership begins with the ability to model what you ask others to become.",
+      "image": "/art/cover-6.svg",
+      "body": "",
+      "published": true
+    }
+  ],
+  "events": [
+    {
+      "id": "build-lead-impact",
+      "title": "Build. Lead. Impact.",
+      "kind": "Live Seminar",
+      "type": "seminar ticket",
+      "date": "18 July 2026",
+      "location": "Gaborone, Botswana",
+      "description": "A live seminar on building with purpose, leading with clarity, and creating meaningful impact.",
+      "price": 250,
+      "published": true
+    },
+    {
+      "id": "clarity-focus-masterclass",
+      "title": "Clarity & Focus Masterclass",
+      "kind": "Webinar",
+      "type": "webinar ticket",
+      "date": "8 August 2026",
+      "location": "Online / Gaborone, Botswana",
+      "description": "A practical online session for removing noise, prioritising well, and acting with confidence.",
+      "price": 150,
+      "published": true
+    },
+    {
+      "id": "vision-to-action-workshop",
+      "title": "Vision to Action Workshop",
+      "kind": "Workshop",
+      "type": "seminar ticket",
+      "date": "12 September 2026",
+      "location": "Gaborone, Botswana",
+      "description": "A hands-on workshop for turning ideas, goals, and business plans into weekly execution.",
+      "price": 300,
+      "published": true
+    }
+  ],
+  "products": [
+    {
+      "id": "clarity-premium-guide",
+      "title": "Clarity Creates Momentum",
+      "category": "Premium Guide",
+      "type": "guide",
+      "description": "A focused guide for personal clarity, disciplined execution, and better decision-making.",
+      "price": 99,
+      "published": true
+    },
+    {
+      "id": "business-builder-toolkit",
+      "title": "Business Builder Toolkit",
+      "category": "Toolkit",
+      "type": "toolkit",
+      "description": "Templates and frameworks for shaping ideas, offers, positioning, and weekly execution.",
+      "price": 149,
+      "published": true
+    },
+    {
+      "id": "leadership-focus-workbook",
+      "title": "Leadership & Focus Workbook",
+      "category": "Workbook",
+      "type": "workbook",
+      "description": "A premium workbook for strengthening influence, focus, team rhythm, and personal standards.",
+      "price": 129,
+      "published": true
+    }
+  ],
+  "resources": [
+    {
+      "id": "clarity-creates-momentum-pdf",
+      "title": "Clarity Creates Momentum",
+      "format": "PDF",
+      "price": 0,
+      "description": "A practical reflection guide for choosing the next right step with confidence.",
+      "url": "",
+      "published": true
+    },
+    {
+      "id": "builders-daily-checklist",
+      "title": "The Builder's Daily Checklist",
+      "format": "PDF",
+      "price": 0,
+      "description": "A daily page for focus, priorities, habits, and progress tracking.",
+      "url": "",
+      "published": true
+    },
+    {
+      "id": "goal-setting-worksheet",
+      "title": "Goal Setting Worksheet",
+      "format": "PDF",
+      "price": 0,
+      "description": "A clean worksheet for turning broad goals into measurable weekly action.",
+      "url": "",
+      "published": true
+    },
+    {
+      "id": "business-idea-validator",
+      "title": "Business Idea Validator",
+      "format": "PDF",
+      "price": 0,
+      "description": "A simple filter for testing demand, audience, value, and execution readiness.",
+      "url": "",
+      "published": true
+    }
+  ],
+  "settings": {
+    "authorName": "Kagiso Gabonamong",
+    "authorBio": "",
+    "authorPhoto": "",
+    "heroTitle": "Think clearly. Build with purpose.",
+    "heroDescription": "Writings, practical resources, and conversations on mindset, leadership, and meaningful work.",
+    "email": "hello@kagisogabonamong.com",
+    "phone": "+267 71 000 000",
+    "location": "Gaborone, Botswana"
+  }
+}

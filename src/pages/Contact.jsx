@@ -1,37 +1,46 @@
-import { Globe2, Mail, MapPin, MessageCircle, Phone, Share2 } from 'lucide-react'
-import SectionHeader from '../components/SectionHeader.jsx'
-import Button from '../components/Button.jsx'
-
+import { useSearchParams } from "react-router-dom";
+import { Mail, MapPin, Phone } from "lucide-react";
+import { useContent } from "../context/ContentContext.jsx";
+import EnquiryForm from "../components/EnquiryForm.jsx";
+import SectionHeader from "../components/SectionHeader.jsx";
 export default function Contact() {
+  const [params] = useSearchParams();
+  const {
+    content: { settings },
+  } = useContent();
   return (
     <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <SectionHeader eyebrow="Contact" title="Connect With Kagiso" text="For bookings, resources, writing enquiries, and seminar conversations." />
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-lg border border-[#d6b15e]/25 bg-[#111111] p-6">
-          <h2 className="text-2xl font-black">Contact Details</h2>
-          <div className="mt-6 grid gap-4 text-[#cfc8b5]">
-            <span className="inline-flex items-center gap-3"><MapPin className="text-[#d6b15e]" size={20} /> Gaborone, Botswana</span>
-            <span className="inline-flex items-center gap-3"><Mail className="text-[#d6b15e]" size={20} /> hello@kagisogabonamong.com</span>
-            <span className="inline-flex items-center gap-3"><Phone className="text-[#d6b15e]" size={20} /> +267 71 000 000</span>
-          </div>
-          <div className="mt-8 flex gap-3">
-            {[Globe2, MessageCircle, Share2].map((Icon, index) => (
-              <a key={index} href="#" className="grid h-11 w-11 place-items-center rounded-md border border-white/10 text-[#d6b15e]" aria-label="Social media placeholder">
-                <Icon size={20} />
-              </a>
-            ))}
+      <SectionHeader
+        eyebrow="Get in touch"
+        title="A conversation starts here."
+        text="For events, resources, writing enquiries, and working together."
+      />
+      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="rounded-lg border border-white/15 bg-[#101813] p-8">
+          <h2 className="text-2xl font-semibold">Contact details</h2>
+          <div className="mt-7 grid gap-6 text-[#bbc6bf]">
+            <span className="inline-flex items-center gap-3">
+              <MapPin size={20} />
+              {settings.location}
+            </span>
+            <a
+              className="inline-flex items-center gap-3 break-all"
+              href={`mailto:${settings.email}`}
+            >
+              <Mail className="shrink-0" size={20} />
+              {settings.email}
+            </a>
+            <a
+              className="inline-flex items-center gap-3"
+              href={`tel:${settings.phone.replace(/\s/g, "")}`}
+            >
+              <Phone size={20} />
+              {settings.phone}
+            </a>
           </div>
         </div>
-        <form className="rounded-lg border border-white/10 bg-white/[0.035] p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <input className="focus-ring rounded-md border border-white/10 bg-[#070707] px-4 py-3" placeholder="Name" />
-            <input className="focus-ring rounded-md border border-white/10 bg-[#070707] px-4 py-3" placeholder="Email" type="email" />
-            <input className="focus-ring rounded-md border border-white/10 bg-[#070707] px-4 py-3 sm:col-span-2" placeholder="Subject" />
-            <textarea className="focus-ring min-h-36 rounded-md border border-white/10 bg-[#070707] px-4 py-3 sm:col-span-2" placeholder="Message" />
-          </div>
-          <Button className="mt-6 w-full">Send Message</Button>
-        </form>
+        <EnquiryForm subject={params.get("subject") || ""} />
       </div>
     </section>
-  )
+  );
 }

@@ -1,36 +1,21 @@
-import { ArrowRight } from 'lucide-react'
-import Button from '../components/Button.jsx'
-import SectionHeader from '../components/SectionHeader.jsx'
-import MonogramLogo from '../components/MonogramLogo.jsx'
-
-const topics = ['Motivation', 'Entrepreneurship', 'Leadership', 'Clarity', 'Mindset', 'Business growth']
-const authorImage = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1000&q=80'
-
+import { useContent } from "../context/ContentContext.jsx";
+import Button from "../components/Button.jsx";
 export default function About() {
+  const {
+    content: { settings },
+  } = useContent();
   return (
-    <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <SectionHeader eyebrow="About" title="Kagiso Gabonamong" text="A writer, speaker, and seminar host based in Gaborone, Botswana." />
-        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="overflow-hidden rounded-lg border border-[#d6b15e]/25 bg-[#111111]">
-            <img src={authorImage} alt="" className="h-80 w-full object-cover opacity-90" />
-            <div className="p-8">
-              <MonogramLogo size="md" className="mb-5" />
-              <h2 className="text-2xl font-black">Mission</h2>
-              <p className="mt-4 leading-7 text-[#cfc8b5]">To help people build lives, careers, and businesses with sharper thinking, stronger discipline, and a deeper commitment to meaningful impact.</p>
-            </div>
-          </div>
-          <div className="rounded-lg border border-white/10 bg-white/[0.035] p-8">
-            <h2 className="text-3xl font-black">Professional Bio</h2>
-            <p className="mt-5 leading-8 text-[#cfc8b5]">Kagiso Gabonamong creates practical content for ambitious people who want to improve how they think, work, lead, and build. Through writings, downloadable resources, seminars, webinars, workshops, and advisory conversations, he shares grounded ideas on clarity, mindset, entrepreneurship, leadership, and business growth.</p>
-            <p className="mt-4 leading-8 text-[#cfc8b5]">Based in Gaborone, Botswana, Kagiso's work is designed for people who want more than inspiration. It is built to help them take action, strengthen their standards, and create a lasting legacy of impact.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {topics.map((topic) => <span key={topic} className="rounded-md border border-[#d6b15e]/30 px-4 py-2 text-sm font-bold text-[#d6b15e]">{topic}</span>)}
-            </div>
-            <Button to="/work-with-me" className="mt-8">Book A Seminar <ArrowRight size={18} /></Button>
-          </div>
-        </div>
-      </div>
+    <section className="mx-auto max-w-4xl px-6 py-20">
+      <p className="eyebrow">Writer · Speaker · Builder</p>
+      <h1 className="display-heading mt-5">{settings.authorName}</h1>
+      <p className="mt-7 text-lg leading-8 text-[#bbc6bf]">
+        Writings, resources, and conversations for people building with clarity
+        and purpose.
+      </p>
+      <p className="mt-5 text-[#99b7a7]">{settings.location}</p>
+      <Button to="/work-with-me" className="mt-8">
+        Work with me
+      </Button>
     </section>
-  )
+  );
 }
