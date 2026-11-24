@@ -1,12 +1,12 @@
 # Owner workspace
 
-Open **/admin**, or choose **Owner login** in the footer. Enter the owner password. The workspace manages writings, books, events, free resources, guides, homepage text, contact details, author story, and portrait. No coding or developer is needed for regular content updates once the hosting setup below is complete.
+Open **/admin** directly. Enter the owner password. The workspace manages writings, books, events, free resources, guides, homepage text, contact details, author story, and portrait. No coding or developer is needed for regular content updates once the hosting setup below is complete.
 
 ## Regular use
 
 1. Choose a tab and an entry, or use **Add**. New entries start as drafts hidden from the website.
 2. Edit the fields. For writings, enter plain text in **Full writing**; put a blank line between paragraphs. HTML and Markdown are not interpreted.
-3. Choose one of the six temporary covers, or paste an HTTPS URL for your own hosted image. Use an HTTPS download URL for a resource. Portraits also use a hosted image URL. The dashboard does not upload files; upload them to your preferred media service first.
+3. Choose one of the three pencil illustrations, or paste an HTTPS URL for your own hosted image. Use an HTTPS download URL for a resource. Portraits also use a hosted image URL. The dashboard does not upload files; upload them to your preferred media service first.
 4. Turn on **Visible on website** when ready. Turn it off to unpublish without deleting. Arrow controls change the display order.
 5. Select **Publish changes**. The success message confirms a durable save. Until then, changes are only in the current editor; closing the page loses unpublished edits.
 6. Use **View site** to review. Sign out on shared computers. Sessions expire after four hours; the password is never stored in browser storage.
@@ -17,7 +17,7 @@ If another session publishes while you edit, your save is rejected instead of ov
 
 ## Adding books
 
-Choose **Books → Add book**. Enter the title, author, cover URL, and a short explanation in **Why recommend it / book description**. You can add an optional HTTPS details link. Select **Recommended book** for the reading list immediately after the homepage writings. Choose **Kagiso's own book** for his future publications; the public own-book section appears only after at least one is published.
+Choose **Books → Add book**. Enter the title, author, cover URL, and a short explanation in **Why recommend it / book description**. You can add an optional HTTPS details link. Select **Recommended book** for the Recommended Books page, or **Kagiso's own book** for the separate Books page. Choose a matching local cover or paste an approved cover URL. Enter a personal recommendation from Kagiso. Mark a recommendation **Featured on homepage** to include it among the first four eligible books in display order. Use Move up and Move down to reorder.
 
 The initial Atomic Habits, Deep Work, and Meditations entries are samples, not his confirmed endorsements. Edit or remove them when he shares his list. Clear **Sample selection, awaiting approval** once he approves an entry. Use **Visible on website** and **Publish changes** to make it public. Books support the same reorder, hide, delete and conflict protection as writings.
 
@@ -50,8 +50,8 @@ Requests require a signed HttpOnly, SameSite=Strict session cookie and same-orig
 
 Failed logins are throttled to eight attempts per IP per 15 minutes **within a running function instance**. That counter is not shared across Vercel instances or restarts. Configure a Vercel Firewall rate-limit rule for POST `/api/admin` if exposing this shared-password login on a busy public site; use a managed identity provider when multiple editors and individual accounts are needed. Keep the owner password long and unique, limit the token to this repository, and rotate/renew the token before expiry. A single owner login does not provide separate editor roles or an audit log of individual users.
 
-## Enquiries and payments
+## Enquiries and newsletter
 
-Event and guide buttons lead to the contact page with the item in the subject. **Continue in email** opens the visitor's email application; the visitor must send the message. There is no email delivery service, checkout, cart, order storage, or payment processing in this version.
+Set **Contact email** under **Site & author** to a confirmed business inbox and publish. Work With Me and Contact both use this setting. Until it is configured, the pages display a setup notice and disable the email action. Work With Me requires one enquiry type. Contact accepts general messages, and event, resource and guide links can prefill its subject. Both pages validate the fields and open a draft in the visitor's email app. The visitor sends it from there.
 
-The existing contact details, article previews, event listings and guide descriptions remain sample content until confirmed by the owner. Author photo/story fields are intentionally blank. Original temporary SVG art is in `public/art`; replace or select covers in the workspace when complete writings are available.
+Set **Newsletter signup URL** to your hosted signup page. Without a URL, the homepage shows that subscriptions are unavailable. The site does not collect newsletter addresses.

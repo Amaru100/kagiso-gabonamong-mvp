@@ -11,7 +11,7 @@ export function publicContent(content) {
     ...Object.fromEntries(
       collections.map((key) => [
         key,
-        (content[key] || []).filter((item) => item.published !== false),
+        (content[key] || []).filter((item) => item.published !== false && (key !== "books" || !item.sample)),
       ]),
     ),
   };
@@ -25,6 +25,8 @@ const fields = {
     "cover",
     "description",
     "url",
+    "coverAlt",
+    "featured",
     "sample",
     "published",
   ],
@@ -33,6 +35,8 @@ const fields = {
     "title",
     "category",
     "readingTime",
+    "author",
+    "date",
     "excerpt",
     "image",
     "body",
@@ -45,6 +49,7 @@ const fields = {
     "type",
     "date",
     "location",
+    "url",
     "description",
     "price",
     "published",
@@ -62,6 +67,8 @@ const fields = {
     "id",
     "title",
     "format",
+    "featured",
+    "cover",
     "description",
     "url",
     "price",
@@ -77,6 +84,8 @@ const settingFields = [
   "email",
   "phone",
   "location",
+  "newsletterUrl",
+  "recommendationsDescription",
 ];
 export function safeUrl(value) {
   return (
@@ -112,9 +121,9 @@ export function validateContent(value) {
       const clean = {};
       for (const field of fields[key]) {
         const entry = item[field];
-        if (field === "sample") {
+        if (field === "sample" || field === "featured") {
           if (entry !== undefined && typeof entry !== "boolean")
-            throw new Error("Invalid sample selection.");
+            throw new Error("Invalid publication flag.");
           clean[field] = entry === true;
           continue;
         }
@@ -149,6 +158,11 @@ export function validateContent(value) {
     throw new Error("Missing site settings.");
   result.settings = {};
   for (const field of settingFields) {
+    const optional = ["newsletterUrl", "recommendationsDescription"].includes(field);
+    if (optional && value.settings[field] === undefined) {
+      result.settings[field] = "";
+      continue;
+    }
     if (
       typeof value.settings[field] !== "string" ||
       value.settings[field].length > 15000
@@ -158,7 +172,7 @@ export function validateContent(value) {
   }
   if (!result.settings.authorName.trim() || !result.settings.heroTitle.trim())
     throw new Error("Author name and homepage heading are required.");
-  if (!safeUrl(result.settings.authorPhoto))
+  if (!safeUrl(result.settings.authorPhoto) || !safeUrl(result.settings.newsletterUrl))
     throw new Error("Use an HTTPS photo URL or a local asset path.");
   if (
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.settings.email) ||

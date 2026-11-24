@@ -11,7 +11,8 @@ import Events from "./pages/Events.jsx";
 import Writing from "./pages/Writing.jsx";
 import Books from "./pages/Books.jsx";
 import Admin from "./pages/Admin.jsx";
-import AuthorSection from "./components/AuthorSection.jsx";
+import AmbientBackground from "./components/AmbientBackground.jsx";
+import SiteMetadata from "./components/SiteMetadata.jsx";
 import WorkWithMe from "./pages/WorkWithMe.jsx";
 import Contact from "./pages/Contact.jsx";
 
@@ -22,15 +23,19 @@ export default function App() {
   }, [pathname]);
   if (pathname === "/admin") return <Admin />;
   return (
-    <div className="min-h-screen text-[#f0f4ef]">
+    <div className="m-site min-h-screen">
+      <AmbientBackground />
+      <SiteMetadata />
+      <a href="#main-content" className="m-skip">Skip to content</a>
       <Navbar />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/writings" element={<Writings />} />
           <Route path="/writings/:id" element={<Writing />} />
           <Route path="/books" element={<Books />} />
+          <Route path="/recommended-books" element={<Books recommended />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/premium-store" element={<PremiumStore />} />
           <Route path="/events" element={<Events />} />
@@ -49,7 +54,6 @@ export default function App() {
           />
         </Routes>
       </main>
-      <AuthorSection />
       <Footer />
     </div>
   );

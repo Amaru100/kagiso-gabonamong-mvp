@@ -9,6 +9,7 @@ import {
   LogOut,
   ExternalLink,
 } from "lucide-react";
+import { contactRecipient } from "../contact.js";
 import { useContent } from "../context/ContentContext.jsx";
 const sections = {
   articles: "Writings",
@@ -25,6 +26,7 @@ const fields = {
     ["author", "Author"],
     ["kind", "Book type", "bookType"],
     ["cover", "Book cover URL"],
+    ["coverAlt", "Cover alt text"],
     ["description", "Why recommend it / book description", "textarea"],
     ["url", "Book details URL (optional)"],
   ],
@@ -33,6 +35,8 @@ const fields = {
     ["id", "URL ID"],
     ["category", "Category"],
     ["readingTime", "Reading time"],
+    ["author", "Author attribution"],
+    ["date", "Publication date"],
     ["excerpt", "Short introduction", "textarea"],
     ["image", "Cover image URL"],
     ["body", "Full writing (separate paragraphs with a blank line)", "body"],
@@ -43,12 +47,14 @@ const fields = {
     ["kind", "Event format"],
     ["date", "Date / schedule"],
     ["location", "Location"],
+    ["url", "Registration URL"],
     ["description", "Description", "textarea"],
   ],
   resources: [
     ["title", "Title"],
     ["id", "ID"],
     ["format", "File format"],
+    ["cover", "Featured artwork URL"],
     ["description", "Description", "textarea"],
     ["url", "Download URL (HTTPS)"],
   ],
@@ -62,9 +68,11 @@ const fields = {
     ["authorName", "Author name"],
     ["authorBio", "Author biography", "body"],
     ["authorPhoto", "Author photograph URL"],
-    ["heroTitle", "Homepage heading"],
+    ["heroTitle", "Homepage heading", "textarea"],
     ["heroDescription", "Homepage introduction", "textarea"],
     ["email", "Contact email"],
+    ["newsletterUrl", "Newsletter signup URL"],
+    ["recommendationsDescription", "Recommended books introduction", "textarea"],
     ["phone", "Phone number"],
     ["location", "Location"],
   ],
@@ -176,7 +184,7 @@ export default function Admin() {
     });
     if (section === "articles")
       Object.assign(item, {
-        image: "/art/cover-1.svg",
+        image: "/sketches/eye.svg",
         readingTime: "4 min read",
       });
     if (section === "books")
@@ -414,6 +422,8 @@ export default function Admin() {
                       Sample selection, awaiting approval
                     </label>
                   )}
+                  {["books", "resources"].includes(section) && (section !== "books" || item.kind !== "own") && <label><input type="checkbox" checked={item.featured === true} onChange={(event) => change("featured", event.target.checked)} /> Featured on homepage</label>}
+                  {section === "settings" && !contactRecipient(item.email) && <p>Contact delivery is awaiting a confirmed inbox.</p>}
                   {fields[section].map(([key, label, type]) => (
                     <label key={key} className="admin-label">
                       {label}
@@ -452,6 +462,14 @@ export default function Admin() {
                       one. Cover and details links can use hosted HTTPS URLs.
                       Remove the sample flag after Kagiso approves a selection.
                     </p>
+                    <label className="admin-label mt-4">Select a local cover
+                      <select className="admin-input" value={["/books/atomic-habits.jpg", "/books/deep-work.jpg", "/books/meditations.jpg"].includes(item.cover) ? item.cover : ""} onChange={(event) => { if (event.target.value) change("cover", event.target.value); }}>
+                        <option value="">Choose a matching cover</option>
+                        <option value="/books/atomic-habits.jpg">Atomic Habits</option>
+                        <option value="/books/deep-work.jpg">Deep Work</option>
+                        <option value="/books/meditations.jpg">Meditations</option>
+                      </select>
+                    </label>
                     {item.cover && (
                       <img
                         src={item.cover}
@@ -463,20 +481,20 @@ export default function Admin() {
                 )}
                 {section === "articles" && (
                   <div className="mt-7">
-                    <p className="admin-label mb-3">Choose a temporary cover</p>
+                    <p className="admin-label mb-3">Choose a pencil illustration</p>
                     <div className="cover-picker">
-                      {[1, 2, 3, 4, 5, 6].map((number) => (
+                      {["eye", "book", "lightbulb"].map((number) => (
                         <button
                           key={number}
                           aria-label={`Choose cover ${number}`}
                           aria-pressed={
-                            item.image === `/art/cover-${number}.svg`
+                            item.image === `/sketches/${number}.svg`
                           }
                           onClick={() =>
-                            change("image", `/art/cover-${number}.svg`)
+                            change("image", `/sketches/${number}.svg`)
                           }
                         >
-                          <img src={`/art/cover-${number}.svg`} alt="" />
+                          <img src={`/sketches/${number}.svg`} alt="" />
                         </button>
                       ))}
                     </div>

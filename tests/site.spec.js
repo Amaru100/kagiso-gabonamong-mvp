@@ -1,124 +1,77 @@
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
-test("public pages, original covers, mobile navigation, and removed purchase flows", async ({
-  page,
-}) => {
+test.beforeEach(async ({ context }) => {
+  await context.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
+});
+
+test("public routes, reference layout, contact safeguards and navigation", async ({ page }) => {
+  test.setTimeout(240000);
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await mkdir("artifacts", { recursive: true });
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await mkdir("artifacts/mystic-mind", { recursive: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.reload();
-  await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Kagiso Gabonamong",
-  );
-  await page.screenshot({ path: "artifacts/desktop.png", fullPage: true });
-  await page.screenshot({ path: "artifacts/desktop-viewport.png" });
-  await expect(
-    page.getByText("Independent thinking. Intentional living."),
-  ).toHaveCount(0);
-  await expect(
-    page.getByText("A little perspective. A more deliberate life."),
-  ).toHaveCount(0);
-  await expect(page.getByText(/Muzila Designs/)).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Recommended books", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Atomic Habits", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Books by Kagiso", exact: true }),
-  ).toHaveCount(0);
-  expect(
-    await page.evaluate(
-      () =>
-        !!(
-          document
-            .getElementById("writings-heading")
-            .compareDocumentPosition(document.getElementById("books-heading")) &
-          Node.DOCUMENT_POSITION_FOLLOWING
-        ),
-    ),
-  ).toBe(true);
-  await expect(
-    page.getByRole("heading", { name: "About the author", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByText("Portrait coming soon")).toBeVisible();
-  expect(
-    await page.locator('a[href*="checkout"], a[href="/cart"]').count(),
-  ).toBe(0);
-  await page.goto("/writings");
-  await expect(page.getByRole("link", { name: "Read More" })).toHaveCount(6);
-  await page.getByRole("link", { name: "Read More" }).first().click();
-  await expect(page.getByText("The full writing is on its way.")).toBeVisible();
-  for (const route of [
-    "/about",
-    "/books",
-    "/resources",
-    "/premium-store",
-    "/events",
-    "/work-with-me",
-    "/contact",
-  ]) {
-    await page.goto(route, { waitUntil: "domcontentloaded" });
-    expect(
-      await page
-        .locator("img")
-        .evaluateAll(
-          (images) =>
-            images.filter((image) => image.complete && !image.naturalWidth)
-              .length,
-        ),
-    ).toBe(0);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Read widely.");
+  await expect(page.getByText("Designed by Muzila Group")).toBeVisible();
+  await expect(page.getByText(/Design preview/)).toHaveCount(0);
+  await expect(page.getByText("Atomic Habits")).toHaveCount(0);
+  await expect(page.getByText("Newsletter subscriptions are currently unavailable.")).toBeVisible();
+  expect(await page.locator(".ambient").evaluate((element) => getComputedStyle(element, "::before").animationName)).toBe("none");
+
+  const routes = ["/", "/writings", "/writings/discipline-dividend-dreams", "/books", "/recommended-books", "/resources", "/premium-store", "/events", "/about", "/work-with-me", "/contact"];
+  for (const width of [320, 375, 390, 430, 768, 1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByText("Writing not found.")).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      if ([390, 768, 1440].includes(width)) {
+        const name = route === "/" ? "home" : route.slice(1).replaceAll("/", "-");
+        expect(await page.locator("main img").evaluateAll(async (images) => {
+          await Promise.all(images.map(async (image) => {
+            image.loading = "eager";
+            await image.decode().catch(() => {});
+          }));
+          return images.every((image) => image.naturalWidth > 0);
+        })).toBe(true);
+        await page.screenshot({ path: "artifacts/mystic-mind/" + width + "-" + name + ".png", fullPage: true });
+      }
+    }
   }
+  const reference = await page.context().newPage();
+  for (const width of [390, 768, 1440]) {
+    await reference.setViewportSize({ width, height: 900 });
+    await reference.emulateMedia({ reducedMotion: "reduce" });
+    await reference.goto(pathToFileURL(resolve("design-reference/kagiso-approved.html")).href);
+    await reference.screenshot({ path: "artifacts/mystic-mind/" + width + "-approved-reference.png", fullPage: true });
+  }
+  await reference.close();
   await page.goto("/events");
-  await page
-    .getByRole("link", { name: "Enquire about this event" })
-    .first()
-    .click();
-  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
-    /Event enquiry:/,
-  );
+  await page.getByRole("link", { name: "Enquire about this event" }).first().click();
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(/Event enquiry:/);
+  await expect(page.getByRole("button", { name: "Continue in email" })).toBeDisabled();
   await page.goto("/work-with-me");
-  await expect(page.locator(".service-list svg")).toHaveCount(0);
-  await page.getByRole("button", { name: "Webinars", exact: true }).click();
-  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
-    "Booking enquiry: Webinars",
-  );
-  await page.screenshot({ path: "artifacts/work-with-me.png", fullPage: true });
+  await expect(page.getByRole("radio")).toHaveCount(5);
+  await page.getByRole("radio", { name: "Webinars" }).check();
+  await page.getByRole("radio", { name: "Workshops" }).check();
+  await expect(page.getByRole("radio", { name: "Webinars" })).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Continue in email" })).toBeDisabled();
   await page.goto("/checkout");
-  await expect(
-    page.getByRole("heading", { name: "Page not found." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page not found." })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const route of [
-    "/",
-    "/writings",
-    "/books",
-    "/resources",
-    "/events",
-    "/contact",
-    "/admin",
-  ]) {
-    await page.goto(route, { waitUntil: "domcontentloaded" });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    if (route === "/")
-      await page.screenshot({ path: "artifacts/mobile.png", fullPage: true });
-  }
-  await page.goto("/", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Toggle navigation" }).click();
-  await page
-    .locator("#mobile-navigation")
-    .getByRole("link", { name: "Writings", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/writings$/);
+  const menu = page.getByRole("button", { name: "Menu" });
+  await menu.click();
+  await page.locator("#site-menu").getByRole("link", { name: "Writings", exact: true }).focus();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeFocused();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await menu.click();
+  await page.locator("#site-menu").getByRole("link", { name: "Writings", exact: true }).click();
+  await expect(page).toHaveURL(/writings$/);
   expect(errors).toEqual([]);
 });
 
@@ -136,6 +89,8 @@ test("owner manages recommended books and future publications", async ({
   await page
     .getByLabel("Why recommend it / book description")
     .fill("A personal reason for recommending this book.");
+  await page.getByLabel("Featured on homepage").check();
+  await page.getByRole("button", { name: "Move up" }).click();
   await page.getByLabel("Visible on website").check();
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
@@ -146,24 +101,24 @@ test("owner manages recommended books and future publications", async ({
     page.getByLabel("Why recommend it / book description"),
   ).toHaveValue("A personal reason for recommending this book.");
   const preview = await page.context().newPage();
-  await preview.goto("/books");
+  await preview.goto("/recommended-books");
   await expect(
     preview.getByRole("heading", { name: "Owner selected book" }),
   ).toBeVisible();
+  await preview.goto("/");
+  await expect(preview.getByRole("heading", { name: "Owner selected book" })).toBeVisible();
   await page.getByLabel("Book type").selectOption("own");
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
-  await preview.reload();
-  await expect(
-    preview.getByRole("heading", { name: "Books by Kagiso" }),
-  ).toBeVisible();
+  await preview.goto("/books");
+  await expect(preview.getByRole("heading", { name: "Owner selected book" })).toBeVisible();
   await page.screenshot({ path: "artifacts/books-admin.png", fullPage: true });
   await page.getByLabel("Visible on website").uncheck();
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
   await preview.reload();
   await expect(
-    preview.getByRole("heading", { name: "Books by Kagiso" }),
+    preview.getByRole("heading", { name: "Owner selected book" }),
   ).toHaveCount(0);
   await preview.close();
   page.once("dialog", (dialog) => dialog.accept());
@@ -188,7 +143,7 @@ test("owner can create, publish, edit, hide, reorder and delete persistent conte
     .getByLabel("Full writing", { exact: false })
     .fill("First real paragraph.\n\nSecond real paragraph.");
   await page
-    .getByRole("button", { name: "Choose cover 4", exact: true })
+    .getByRole("button", { name: "Choose cover book", exact: true })
     .click();
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
