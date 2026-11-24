@@ -30,10 +30,13 @@ test("book content remains compatible with older content files and validates cov
   assert.throws(() => validateContent(content), /book type/);
   content.books[0].kind = "recommended";
   content.books[0].published = false;
+  content.books[1].sample = false;
+  content.books[1].featured = true;
   assert.equal(
     publicContent(validateContent(content)).books.length,
-    fixture.books.length - 1,
+    1,
   );
+  assert.equal(publicContent(validateContent(content)).books[0].featured, true);
 });
 beforeEach(() => writeFile(process.env.CONTENT_FILE, JSON.stringify(fixture)));
 async function call(method, body, cookie, extra = {}, target = handler) {
@@ -276,4 +279,18 @@ test("malformed JSON is rejected and production without publishing secrets serve
   } finally {
     delete process.env.VERCEL;
   }
+});
+
+test("contact placeholders are gated and email drafts encode fields", async () => {
+  const { contactRecipient, enquiryUrl } = await import("../src/contact.js");
+  assert.equal(contactRecipient("hello@example.com"), "");
+  assert.equal(contactRecipient("hello@kagisogabonamong.com"), "");
+  assert.equal(contactRecipient("someone@example.org"), "");
+  assert.equal(contactRecipient("name@business.test"), "name@business.test");
+  const fields = new URLSearchParams({name:"Jane & Jim",email:"jane@business.test",subject:"Talk? Q&A",message:"Line one\nLine two"});
+  const draft = new URL(enquiryUrl("owner@business.test", fields, "Workshops"));
+  assert.equal(draft.pathname, "owner@business.test");
+  assert.equal(draft.searchParams.get("subject"), "Talk? Q&A");
+  assert.match(draft.searchParams.get("body"), /Enquiry type: Workshops\r\nName: Jane & Jim/);
+  assert.match(draft.searchParams.get("body"), /Line one\nLine two/);
 });

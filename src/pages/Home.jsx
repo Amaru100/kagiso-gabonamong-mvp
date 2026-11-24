@@ -1,119 +1,45 @@
 import { Link } from "react-router-dom";
-import ResourceCard from "../components/ResourceCard.jsx";
-import ProductCard from "../components/ProductCard.jsx";
-import EventCard from "../components/EventCard.jsx";
-import BooksSection from "../components/BooksSection.jsx";
 import { useContent, published } from "../context/ContentContext.jsx";
+import ArticleCard from "../components/ArticleCard.jsx";
+import BooksSection from "../components/BooksSection.jsx";
+import AboutSection from "../components/AboutSection.jsx";
 
 export default function Home() {
   const { content } = useContent();
   const { settings } = content;
-  const writings = published(content.articles);
-  const latest = writings[0];
-  return (
-    <div className="writer-home">
-      <section className="writer-intro">
-        <div className="writer-introduction">
-          <h1>{settings.heroTitle}</h1>
-          <p>{settings.heroDescription}</p>
-          <Link className="text-link" to="/about">
-            More about Kagiso
-          </Link>
+  const feature = published(content.resources).find((resource) => resource.featured) || published(content.resources)[0];
+  const hasRecommendations = (content.books || []).some((book) => book.published !== false && book.featured && !book.sample && book.kind !== "own" && book.cover && book.author && book.description);
+  return <div className="m-wrap">
+    <section className="m-hero">
+      <h1>{settings.heroTitle === "Kagiso Gabonamong" ? "Read widely.\nThink deeply.\nLive fully." : settings.heroTitle}</h1>
+      <p>{settings.heroDescription}</p><Link to="/writings" className="m-link">Explore the writings</Link>
+    </section>
+    <section className="m-section">
+      <p className="m-label">RESOURCES</p><h2>Ideas worth<br/>keeping.</h2>
+      <p>Explore the writings, books, and tools that shape the conversation.</p>
+      {feature && <article className="m-feature">
+        <div className="m-feature-copy"><p className="m-label">FEATURED RESOURCE</p><h3>{feature.title}</h3><p>{feature.description}</p>
+          <Link className="m-link" to="/resources">Explore resources</Link>
         </div>
-        {latest && (
-          <article className="featured-writing">
-            <Link
-              to={`/writings/${latest.id}`}
-              aria-label={`Read ${latest.title}`}
-            >
-              <img src={latest.image || "/art/cover-1.svg"} alt="" />
-            </Link>
-            <p className="writing-meta">Latest writing / {latest.category}</p>
-            <h2>
-              <Link to={`/writings/${latest.id}`}>{latest.title}</Link>
-            </h2>
-            <p className="featured-excerpt">{latest.excerpt}</p>
-          </article>
-        )}
-      </section>
-      <section className="editorial-section" aria-labelledby="writings-heading">
-        <div className="section-margin">
-          <h2 id="writings-heading">Writings</h2>
-          <p>On mindset, leadership, and building a business.</p>
-          <Link to="/writings" className="text-link">
-            All writings
-          </Link>
-        </div>
-        <div className="writing-index">
-          {writings.slice(latest ? 1 : 0, 4).map((article) => (
-            <article key={article.id} className="writing-row">
-              <div>
-                <p className="writing-meta">
-                  {article.category} / {article.readingTime}
-                </p>
-                <h3>
-                  <Link to={`/writings/${article.id}`}>{article.title}</Link>
-                </h3>
-                <p>{article.excerpt}</p>
-              </div>
-              <Link
-                to={`/writings/${article.id}`}
-                tabIndex={-1}
-                aria-hidden="true"
-              >
-                <img
-                  src={article.image || "/art/cover-1.svg"}
-                  alt=""
-                  loading="lazy"
-                />
-              </Link>
-            </article>
-          ))}
-        </div>
-      </section>
-      <BooksSection />
-      <section
-        className="editorial-section"
-        aria-labelledby="resources-heading"
-      >
-        <div className="section-margin">
-          <h2 id="resources-heading">Resources</h2>
-          <p>Worksheets and practical guides to use in your own work.</p>
-          <Link to="/resources" className="text-link">
-            All resources
-          </Link>
-        </div>
-        <div className="editorial-resource-grid">
-          {published(content.resources).map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} />
-          ))}
-        </div>
-      </section>
-      <section className="editorial-section" aria-labelledby="guides-heading">
-        <div className="section-margin">
-          <h2 id="guides-heading">Guides</h2>
-          <p>Longer reads and workbooks. Enquire directly for access.</p>
-        </div>
-        <div className="editorial-resource-grid">
-          {published(content.products).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-      <section className="editorial-section" aria-labelledby="events-heading">
-        <div className="section-margin">
-          <h2 id="events-heading">Events</h2>
-          <p>Seminars, webinars, and workshops.</p>
-          <Link to="/events" className="text-link">
-            All events
-          </Link>
-        </div>
-        <div className="editorial-resource-grid">
-          {published(content.events).map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-      </section>
-    </div>
-  );
+        <div className="m-feature-art" aria-hidden="true">{feature.cover ? <img src={feature.cover} alt="" /> : <div className="m-feature-paper">{feature.title}</div>}</div>
+      </article>}
+      <div className="m-resource-grid">
+        <article><div className="m-resource-art m-resource-green" aria-hidden="true">THE<br/>WRITING<br/>ARCHIVE.</div><h3>Essays &amp; Reflections</h3><p>Thoughtful reading on the ideas, experiences, and questions that matter.</p><Link className="m-link" to="/writings">Explore the archive</Link></article>
+        <article><div className="m-resource-art" aria-hidden="true">NOTES<br/>&amp; GUIDES.</div><h3>Guides &amp; Resources</h3><p>A growing collection of practical guides and materials for readers.</p><Link className="m-link" to="/resources">See resources</Link></article>
+      </div>
+    </section>
+    <section className="m-section">
+      <p className="m-label">THE BLOG</p><h2>Explore your<br/>curiosity.</h2>
+      <p>Writing for people who never stop asking questions.</p>
+      {published(content.articles).slice(0,3).map((article) => <ArticleCard key={article.id} article={article}/>)}
+      <Link className="m-link" to="/writings">View all writings</Link>
+    </section>
+    {hasRecommendations && <section className="m-section"><h2>Books worth your time.</h2>
+      <p>{settings.recommendationsDescription || "A selection of books recommended by Kagiso, with a personal note on why each is worth reading."}</p>
+      <BooksSection recommended featured/><Link className="m-link" to="/recommended-books">View all recommended books</Link></section>}
+    <AboutSection />
+    <section className="m-newsletter"><h2>A New Perspective<br/>Starts Here.</h2><p>Follow the latest writings, resources, and book announcements.</p>
+      {settings.newsletterUrl ? <a className="m-button" href={settings.newsletterUrl}>Get the Letters</a> : <p>Newsletter subscriptions are currently unavailable.</p>}
+    </section>
+  </div>;
 }

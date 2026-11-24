@@ -6,13 +6,13 @@ export default function PremiumStore() {
   const { content } = useContent();
   const products = published(content.products);
   return (
-    <section className="px-4 py-16 sm:px-6 lg:px-8">
+    <section className="m-wrap m-page">
       <SectionHeader
         eyebrow="The collection"
         title="Premium Guides And Toolkits"
         text="Explore the collection and enquire directly for availability and access."
       />
-      <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-2">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
