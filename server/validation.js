@@ -1,4 +1,5 @@
 import { sanitizeRichText } from "../src/richText.js";
+import { removeLegacyPlaceholders } from "./legacy-placeholders.js";
 export const collections = [
   "articles",
   "events",
@@ -8,6 +9,7 @@ export const collections = [
   "testimonials",
 ];
 export function publicContent(content) {
+  content = removeLegacyPlaceholders(content);
   return {
     ...content,
     ...Object.fromEntries(
@@ -195,5 +197,5 @@ export function validateContent(value) {
     /[\r\n]/.test(result.settings.phone)
   )
     throw new Error("Enter valid contact details.");
-  return result;
+  return removeLegacyPlaceholders(result);
 }

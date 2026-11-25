@@ -117,9 +117,14 @@ body { background: var(--m-bg); }
 .m-ebook-cover { max-height: 320px; width: 100%; object-fit: contain; margin-bottom: 20px; }
 .m-about-grid img { aspect-ratio: 1; object-fit: contain; object-position: top; }
 .m-testimonials { display: grid; gap: 42px; margin-top: 45px; }
+.m-testimonials { --portrait-size: 144px; }
 .m-testimonials figcaption { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.m-testimonials figcaption > div { min-width: 0; overflow-wrap: anywhere; }
 .m-testimonials figcaption h2 { font-size: 23px; margin-bottom: 4px; }
-.m-testimonials img { width: 90px; height: 90px; object-fit: cover; object-position: center 35%; }
+.m-testimonials img { flex: none; width: var(--portrait-size); height: var(--portrait-size); object-fit: cover; object-position: center 35%; }
+@media (max-width: 1023px) { .m-testimonials { --portrait-size: 120px; } }
+@media (max-width: 639px) { .m-testimonials { --portrait-size: 96px; } }
+@media (max-width: 359px) { .m-testimonials { --portrait-size: 80px; } }
 .m-testimonials blockquote { max-width: 70ch; }
 @media (max-width: 880px) { .m-nav > a { display: none; } }
 @media (max-width: 650px) { .m-header-slot { height: 78px; } }
