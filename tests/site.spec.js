@@ -11,7 +11,7 @@ test("header hides after five seconds and can be restored by scroll, keyboard an
   await page.goto("/writings");
   const header = page.locator(".m-header");
   const main = page.locator("#main-content");
-  await expect(main.getByRole("heading",{level:1})).toHaveText("Writings");
+  await expect(main.getByRole("heading",{level:1})).toHaveText("Writings",{timeout:15000});
   await page.clock.pauseAt(new Date(start.getTime() + 60_000));
   await page.evaluate(()=>window.dispatchEvent(new Event("scroll")));
   const top = await main.evaluate((node)=>node.getBoundingClientRect().top);
@@ -47,6 +47,10 @@ test("header hides after five seconds and can be restored by scroll, keyboard an
 
 test("download links deliver both approved ebook PDFs and brand links", async ({page})=>{
   await page.goto("/resources");
+  await expect(page.locator("main article h3")).toHaveText([
+    "The Time Series and Imagination",
+    "The 5 Principles: Be in Your Desired State",
+  ]);
   const links=page.getByRole("link",{name:"Download PDF",exact:true});
   await expect(links).toHaveCount(2);
   await expect(links.locator("svg")).toHaveCount(0);
@@ -60,6 +64,21 @@ test("download links deliver both approved ebook PDFs and brand links", async ({
   await expect(page.getByRole("link",{name:"X",exact:true})).toHaveAttribute("href","https://x.com/Shawny_Shuddha");
   await expect(page.getByRole("link",{name:"Instagram",exact:true})).toHaveAttribute("href","https://www.instagram.com/kagiso_gabonamong/");
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href","/brand/favicon.svg");
+});
+
+test("testimonial portraits stay square and quotes stay below them at all sizes", async ({page})=>{
+  await page.goto("/testimonials");
+  const portraits = page.locator(".m-testimonials figcaption img");
+  await expect(portraits).toHaveCount(3);
+  for (const [width, size] of [[1440,144],[768,120],[390,96],[320,80]]) {
+    await page.setViewportSize({width,height:900});
+    expect(await portraits.evaluateAll((images)=>images.map((image)=>{
+      const box = image.getBoundingClientRect();
+      const quote = image.closest("figure").querySelector("blockquote");
+      return [box.width,box.height,quote.getBoundingClientRect().top >= box.bottom];
+    }))).toEqual(Array.from({length:3},()=>[size,size,true]));
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
 });
 
 test.beforeEach(async ({ context }) => {

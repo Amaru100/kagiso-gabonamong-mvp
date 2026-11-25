@@ -89,6 +89,20 @@ const { default: handler, contentHandler } = await import(
 const { publicContent } = await import("../server/validation.js");
 const { validateContent } = await import("../server/validation.js");
 after(() => rm(directory, { recursive: true, force: true }));
+test("legacy sample resources stay out of public content and edited records survive", () => {
+  const sample = {
+    id:"clarity-creates-momentum-pdf",title:"Clarity Creates Momentum",format:"PDF",price:0,
+    description:"A practical reflection guide for choosing the next right step with confidence.",url:"",published:true,
+  };
+  const restored = {...sample,url:"/ebooks/admin-upload.pdf"};
+  const added = {...sample,id:"owner-resource",title:"An authorised new resource"};
+  const configured = {...fixture,resources:[...fixture.resources,sample,restored,added]};
+  assert.deepEqual(publicContent(configured).resources,[...fixture.resources,restored,added]);
+  const validated = validateContent({...fixture,resources:[...fixture.resources,sample,added]});
+  assert.deepEqual(validated.resources.map((item)=>item.id),[
+    "the-time-series-and-imagination","the-5-principles","owner-resource",
+  ]);
+});
 test("book content remains compatible with older content files and validates covers and types", () => {
   const legacy = structuredClone(fixture);
   delete legacy.books;

@@ -21,6 +21,8 @@ The repository contains the public site and deployable integration. The live Sup
 
 ## Backend boundaries
 
+- To clean up a database previously seeded with the legacy demonstration content, rerun the seed command from step 3. It removes only records matching the original placeholders and checks the content revision before writing. Published reads filter those same records while cleanup is pending.
+
 - Public access goes through Vercel functions. Supabase RLS and grants block direct public or authenticated table access. Server handlers verify the Auth session and live administrator role before every privileged operation. The public content handler filters drafts.
 - The migration creates a private storage bucket. New files are accessible through the media proxy to signed-in administrators or when referenced by a published record. Uploads currently cap files at 3 MB and accept PDF, PNG, JPEG and WebP. Uploaded originals are retained in the private bucket. The owner can replace references without deleting originals.
 - Enquiries use a honeypot, same-origin JSON requests, durable rate limits and request IDs to retry safely. The dashboard can search the most recent 200 records and update their status. Configure a retention policy before launch.
