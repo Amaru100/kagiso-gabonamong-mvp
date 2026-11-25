@@ -1,3 +1,5 @@
+import { uploadMedia } from "./media.js";
+import { administrator, authRequest, databaseEnabled, rows, requestError } from "./database.js";
 import { createHmac, timingSafeEqual, scrypt as rawScrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { readContent, saveContent, fallbackContent } from "./content-store.js";
@@ -14,7 +16,7 @@ const equal = (a, b) => {
   const y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
 };
-function authorized(req) {
+function legacyAuthorized(req) {
   if (!configured()) return false;
   const token = (req.headers.cookie || "")
     .split(";")
@@ -29,26 +31,27 @@ function authorized(req) {
     equal(signature || "", sign(expires))
   );
 }
-function cookie(res, value, age) {
+function cookie(res, value, age, name = "kg_owner") {
   res.setHeader(
     "Set-Cookie",
-    `kg_owner=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.VERCEL ? "; Secure" : ""}`,
+    `${name}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.VERCEL ? "; Secure" : ""}`,
   );
 }
-function sameOrigin(req) {
+export function sameOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return false;
   try {
-    return new URL(origin).host === req.headers.host;
+    const url = new URL(origin);
+    return url.host === req.headers.host && (process.env.VERCEL ? url.protocol === "https:" : ["https:", "http:"].includes(url.protocol));
   } catch {
     return false;
   }
 }
-async function bodyOf(req) {
+export async function bodyOf(req, limit = 900000) {
   if (req.body !== undefined) {
     const text =
       typeof req.body === "string" ? req.body : JSON.stringify(req.body);
-    if (Buffer.byteLength(text) > 900000)
+    if (Buffer.byteLength(text) > limit)
       throw Object.assign(new Error("Content is too large."), { status: 413 });
     try {
       return JSON.parse(text);
@@ -59,7 +62,7 @@ async function bodyOf(req) {
   let text = "";
   for await (const chunk of req) {
     text += chunk;
-    if (Buffer.byteLength(text) > 900000)
+    if (Buffer.byteLength(text) > limit)
       throw Object.assign(new Error("Content is too large."), { status: 413 });
   }
   try {
@@ -68,6 +71,69 @@ async function bodyOf(req) {
     throw Object.assign(new Error("Invalid request."), { status: 400 });
   }
 }
+async function databaseAdmin(req, res, send) {
+  const mode = new URL(req.url || "/api/admin", "http://localhost").searchParams.get("view");
+  if (req.method !== "GET" && !sameOrigin(req)) return send(403,{error:"This request must come from this website."});
+  const token = (req.headers.cookie || "").match(/(?:^|;\s*)mm_session=([^;]+)/)?.[1];
+  if (req.method === "DELETE") {
+    cookie(res,"",0,"mm_session");
+    if (token) await authRequest("logout", { method:"POST", token });
+    return send(200,{ok:true});
+  }
+  if (req.method === "POST" && !mode) {
+    const { email, password } = await bodyOf(req);
+    if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > 512)
+      return send(400,{error:"Enter your email and password."});
+    const response = await authRequest("token?grant_type=password",{method:"POST",body:{email,password}});
+    if (!response.ok) return send(response.status === 429 ? 429 : 401,{error:"Sign-in failed. Check your credentials or try again later."});
+    const session = await response.json();
+    const actor = await administrator(session.access_token);
+    if (!actor) return send(403,{error:"This account has no administrator access."});
+    cookie(res,session.access_token,Math.min(3600,Number(session.expires_in) || 3600),"mm_session");
+    return send(200,{ok:true});
+  }
+  const actor = await administrator(token);
+  if (!actor) return send(401,{mode:"supabase",error:"Sign in to manage the website."});
+  if (mode === "media") {
+    if (req.method === "GET") return send(200,{records:await rows("mystic_media?select=path,url,type,alt,name&order=created_at.desc&limit=200")});
+    if (req.method === "POST") return send(201,{item:await uploadMedia(await bodyOf(req,4_100_000),actor.id)});
+  }
+  if (mode === "enquiries") {
+    if (req.method === "GET") return send(200,{records:await rows("mystic_enquiries?select=id,type,category,name,email,subject,message,status,created_at&order=created_at.desc&limit=200")});
+    if (req.method === "PUT") {
+      const { id, status } = await bodyOf(req);
+      if (!/^[0-9a-f-]{36}$/i.test(id) || !["new","read","replied","archived"].includes(status)) return send(400,{error:"Invalid enquiry update."});
+      const updated = await rows("mystic_enquiries?id=eq." + id,{method:"PATCH",body:{status},prefer:"return=representation"});
+      return updated.length ? send(200,{ok:true}) : send(404,{error:"Enquiry not found."});
+    }
+  }
+  if (mode === "activity" && req.method === "GET") {
+    if (actor.role !== "super_admin") return send(403,{error:"Super Admin access required."});
+    return send(200,{records:await rows("mystic_activity?order=created_at.desc&limit=200")});
+  }
+  if (mode === "administrators") {
+    if (actor.role !== "super_admin") return send(403,{error:"Super Admin access required."});
+    if (req.method === "GET") return send(200,{records:await rows("mystic_admins?order=role")});
+    if (req.method === "PUT") {
+      const { id, role } = await bodyOf(req);
+      if (id === actor.id || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id) || !["content_admin","super_admin","revoked"].includes(role)) return send(400,{error:"Invalid account or role."});
+      await rows("rpc/mystic_set_role",{method:"POST",body:{editor:actor.id,target_user:id,next_role:role}});
+      return send(200,{ok:true});
+    }
+  }
+  if (mode) return send(405,{error:"Method not allowed."});
+  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role});
+  if (req.method === "PUT") {
+    const body = await bodyOf(req);
+    let content;
+    try { content = validateContent(body.content); }
+    catch (error) { return send(400,{error:error.message}); }
+    if (!/^[0-9a-f-]{36}$/i.test(body.revision || "")) return send(400,{error:"Missing content revision."});
+    return send(200,{...await saveContent(content,body.revision,actor.id),content});
+  }
+  return send(405,{error:"Method not allowed."});
+}
+
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
@@ -77,8 +143,9 @@ export default async function handler(req, res) {
     res.end(JSON.stringify(data));
   };
   try {
+    if (databaseEnabled()) return await databaseAdmin(req, res, send);
     if (req.method === "GET") {
-      if (!authorized(req))
+      if (!legacyAuthorized(req))
         return send(401, {
           configured: configured(),
           error: configured()
@@ -136,7 +203,7 @@ export default async function handler(req, res) {
       cookie(res, `${expires}.${sign(expires)}`, ttl);
       return send(200, { ok: true });
     }
-    if (!authorized(req))
+    if (!legacyAuthorized(req))
       return send(401, { error: "Your session expired. Sign in again." });
     const body = await bodyOf(req);
     let content;
@@ -174,6 +241,10 @@ export async function contentHandler(req, res) {
       JSON.stringify({ content: publicContent((await readContent()).content) }),
     );
   } catch {
+    if (databaseEnabled()) {
+      res.statusCode = 503;
+      return res.end(JSON.stringify({error:"Published content is temporarily unavailable."}));
+    }
     try {
       res.end(
         JSON.stringify({ content: publicContent(await fallbackContent()) }),

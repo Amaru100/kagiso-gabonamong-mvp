@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import AdminRecords from "../components/AdminRecords.jsx";
+import RichTextEditor from "../components/RichTextEditor.jsx";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowDown,
   ArrowUp,
@@ -9,7 +11,6 @@ import {
   LogOut,
   ExternalLink,
 } from "lucide-react";
-import { contactRecipient } from "../contact.js";
 import { useContent } from "../context/ContentContext.jsx";
 const sections = {
   articles: "Writings",
@@ -17,9 +18,11 @@ const sections = {
   events: "Events",
   resources: "Resources",
   products: "Guides",
+  testimonials: "Testimonials",
   settings: "Site & author",
 };
 const fields = {
+  testimonials: [["title","Name"],["id","ID"],["description","Professional description"],["image","Photograph URL"],["quote","Complete quotation","body"]],
   books: [
     ["title", "Title"],
     ["id", "ID"],
@@ -39,6 +42,9 @@ const fields = {
     ["date", "Publication date"],
     ["excerpt", "Short introduction", "textarea"],
     ["image", "Cover image URL"],
+    ["bodyHtml","Rich article content","rich"],
+    ["seoTitle","SEO title"],
+    ["seoDescription","SEO description","textarea"],
     ["body", "Full writing (separate paragraphs with a blank line)", "body"],
   ],
   events: [
@@ -53,6 +59,8 @@ const fields = {
   resources: [
     ["title", "Title"],
     ["id", "ID"],
+    ["author","Author"],
+    ["pages","PDF page count"],
     ["format", "File format"],
     ["cover", "Featured artwork URL"],
     ["description", "Description", "textarea"],
@@ -70,6 +78,12 @@ const fields = {
     ["authorPhoto", "Author photograph URL"],
     ["heroTitle", "Homepage heading", "textarea"],
     ["heroDescription", "Homepage introduction", "textarea"],
+    ["siteName","Site name"],
+    ["seoDescription","Default SEO description","textarea"],
+    ["heroThought","Homepage philosophical statement","textarea"],
+    ["mission","Mission statement","body"],
+    ["instagram","Instagram URL"],
+    ["x","X URL"],
     ["email", "Contact email"],
     ["newsletterUrl", "Newsletter signup URL"],
     ["recommendationsDescription", "Recommended books introduction", "textarea"],
@@ -89,11 +103,16 @@ async function request(method = "GET", data) {
   }));
   if (!response.ok)
     throw Object.assign(new Error(result.error || "Request failed."), {
-      status: response.status,
+      status: response.status, mode:result.mode,
     });
   return result;
 }
 export default function Admin() {
+  const navigate = useNavigate();
+  const {pathname} = useLocation();
+  const [mode,setMode] = useState("");
+  const [role,setRole] = useState("");
+  const [email,setEmail] = useState("");
   const { setContent } = useContent();
   const [draft, setDraft] = useState(null);
   const [revision, setRevision] = useState("");
@@ -106,13 +125,17 @@ export default function Admin() {
   const [dirty, setDirty] = useState(false);
   const load = async () => {
     const result = await request();
-    setDraft({ ...result.content, books: result.content.books || [] });
+    setDraft({ ...result.content, books: result.content.books || [], testimonials:result.content.testimonials || [] });
     setRevision(result.revision);
+    setRole(result.role || "");
+    if (pathname === "/admin/login") navigate("/admin", {replace:true});
     setDirty(false);
   };
   useEffect(() => {
     load()
       .catch((e) => {
+        if (e.mode) setMode(e.mode);
+        if (e.status === 401 && pathname !== "/admin/login") navigate("/admin/login",{replace:true});
         if (e.status !== 401 || e.message.includes("setup"))
           setError(e.message);
       })
@@ -133,7 +156,7 @@ export default function Admin() {
     setBusy(true);
     setError("");
     try {
-      await request("POST", { password });
+      await request("POST", { password, email });
       setPassword("");
       await load();
     } catch (e) {
@@ -225,6 +248,7 @@ export default function Admin() {
     try {
       await request("DELETE");
       setDraft(null);
+      navigate("/admin/login",{replace:true});
       setDirty(false);
       setStatus("");
       setError("");
@@ -244,6 +268,7 @@ export default function Admin() {
           Add and edit writings, books, events, resources, and author details.
         </p>
         <form onSubmit={signIn} className="mt-8 grid gap-4">
+          {mode === "supabase" && <label className="admin-label">Email<input type="email" required autoComplete="username" className="admin-input" value={email} onChange={(event)=>setEmail(event.target.value)} /></label>}
           <label className="admin-label">
             Owner password
             <input
@@ -270,6 +295,9 @@ export default function Admin() {
     section === "settings" ? draft.settings : draft[section][selected];
   return (
     <main className="admin-shell">
+      <section className="mb-5" aria-label="Content overview">
+        <p>Published writings {draft.articles.filter((item)=>item.published !== false).length} ? Draft writings {draft.articles.filter((item)=>item.published === false).length} ? Resources {draft.resources.length} ? Testimonials {draft.testimonials.length} ? Recommended books {draft.books.filter((item)=>item.kind !== "own" && !item.sample).length}</p>
+      </section>
       <fieldset disabled={busy} className="min-w-0">
         <header className="admin-topbar">
           <div>
@@ -423,8 +451,9 @@ export default function Admin() {
                     </label>
                   )}
                   {["books", "resources"].includes(section) && (section !== "books" || item.kind !== "own") && <label><input type="checkbox" checked={item.featured === true} onChange={(event) => change("featured", event.target.checked)} /> Featured on homepage</label>}
-                  {section === "settings" && !contactRecipient(item.email) && <p>Contact delivery is awaiting a confirmed inbox.</p>}
-                  {fields[section].map(([key, label, type]) => (
+                  {fields[section].map(([key, label, type]) => type === "rich" ? (
+                    <div key={key} className="admin-label"><span>{label}</span><RichTextEditor value={item[key] || ""} onChange={(value)=>change(key,value)} /></div>
+                  ) : (
                     <label key={key} className="admin-label">
                       {label}
                       {type === "bookType" ? (
@@ -438,6 +467,7 @@ export default function Admin() {
                         </select>
                       ) : type ? (
                         <textarea
+                          aria-label={label}
                           rows={type === "body" ? 14 : 3}
                           className="admin-input"
                           value={item[key] || ""}
@@ -521,6 +551,7 @@ export default function Admin() {
           </section>
         </div>
       </fieldset>
+      {role && <AdminRecords role={role} />}
     </main>
   );
 }

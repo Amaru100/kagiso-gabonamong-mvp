@@ -1,9 +1,11 @@
+import { sanitizeRichText } from "../src/richText.js";
 export const collections = [
   "articles",
   "events",
   "products",
   "resources",
   "books",
+  "testimonials",
 ];
 export function publicContent(content) {
   return {
@@ -17,6 +19,7 @@ export function publicContent(content) {
   };
 }
 const fields = {
+  testimonials: ["id","title","description","quote","image","published"],
   books: [
     "id",
     "title",
@@ -26,6 +29,7 @@ const fields = {
     "description",
     "url",
     "coverAlt",
+    "coverBackup",
     "featured",
     "sample",
     "published",
@@ -40,6 +44,9 @@ const fields = {
     "excerpt",
     "image",
     "body",
+    "bodyHtml",
+    "seoTitle",
+    "seoDescription",
     "published",
   ],
   events: [
@@ -67,6 +74,8 @@ const fields = {
     "id",
     "title",
     "format",
+    "author",
+    "pages",
     "featured",
     "cover",
     "description",
@@ -84,6 +93,12 @@ const settingFields = [
   "email",
   "phone",
   "location",
+  "siteName",
+  "seoDescription",
+  "heroThought",
+  "mission",
+  "instagram",
+  "x",
   "newsletterUrl",
   "recommendationsDescription",
 ];
@@ -99,8 +114,8 @@ export function validateContent(value) {
     throw new Error("Invalid content.");
   const result = {};
   for (const key of collections) {
-    if (key === "books" && value.books === undefined)
-      value = { ...value, books: [] };
+    if (["books","testimonials"].includes(key) && value[key] === undefined)
+      value = { ...value, [key]: [] };
     if (!Array.isArray(value[key]) || value[key].length > 500)
       throw new Error(`Invalid ${key} collection.`);
     const ids = new Set();
@@ -146,11 +161,12 @@ export function validateContent(value) {
         if (entry !== undefined && typeof entry !== "string")
           throw new Error(`Invalid ${field}.`);
         clean[field] = entry || "";
-        if (clean[field].length > (field === "body" ? 150000 : 5000))
+        if (clean[field].length > (["body","bodyHtml"].includes(field) ? 150000 : 5000))
           throw new Error(`${field} is too long.`);
-        if (["url", "image", "cover"].includes(field) && !safeUrl(clean[field]))
+        if (["url", "image", "cover", "coverBackup"].includes(field) && !safeUrl(clean[field]))
           throw new Error("Use an HTTPS URL or a local asset path.");
       }
+      if (clean.bodyHtml) clean.bodyHtml = sanitizeRichText(clean.bodyHtml);
       return clean;
     });
   }
@@ -158,7 +174,7 @@ export function validateContent(value) {
     throw new Error("Missing site settings.");
   result.settings = {};
   for (const field of settingFields) {
-    const optional = ["newsletterUrl", "recommendationsDescription"].includes(field);
+    const optional = ["siteName","seoDescription","heroThought","mission","instagram","x","newsletterUrl", "recommendationsDescription"].includes(field);
     if (optional && value.settings[field] === undefined) {
       result.settings[field] = "";
       continue;
@@ -172,10 +188,10 @@ export function validateContent(value) {
   }
   if (!result.settings.authorName.trim() || !result.settings.heroTitle.trim())
     throw new Error("Author name and homepage heading are required.");
-  if (!safeUrl(result.settings.authorPhoto) || !safeUrl(result.settings.newsletterUrl))
+  if (!safeUrl(result.settings.authorPhoto) || !safeUrl(result.settings.newsletterUrl) || !safeUrl(result.settings.instagram) || !safeUrl(result.settings.x))
     throw new Error("Use an HTTPS photo URL or a local asset path.");
   if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.settings.email) ||
+    (result.settings.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.settings.email)) ||
     /[\r\n]/.test(result.settings.phone)
   )
     throw new Error("Enter valid contact details.");

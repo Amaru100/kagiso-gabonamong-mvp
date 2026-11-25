@@ -1,3 +1,4 @@
+import { databaseEnabled, rows, requestError } from "./database.js";
 import { readFile, writeFile, rename } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -25,6 +26,11 @@ function headers() {
   };
 }
 export async function readContent() {
+  if (databaseEnabled()) {
+    const [record] = await rows("mystic_content?id=eq.1&select=content,revision");
+    if (!record) throw requestError(503, "Initial content must be seeded before publishing.");
+    return record;
+  }
   if (process.env.VERCEL || process.env.CONTENT_GITHUB_TOKEN) {
     if (!process.env.CONTENT_GITHUB_TOKEN)
       throw Object.assign(
@@ -54,7 +60,12 @@ export async function readContent() {
   return { content: JSON.parse(data), revision: revision(data) };
 }
 let localWrite = Promise.resolve();
-export async function saveContent(content, expectedRevision) {
+export async function saveContent(content, expectedRevision, actor) {
+  if (databaseEnabled()) {
+    const revision = await rows("rpc/mystic_save_content", {method:"POST",body:{next_content:content, expected_revision:expectedRevision, editor:actor}});
+    if (!revision) throw requestError(409, "Content changed. Reload before publishing.");
+    return {revision};
+  }
   if (process.env.VERCEL || process.env.CONTENT_GITHUB_TOKEN) {
     const response = await fetch(endpoint(), {
       method: "PUT",
