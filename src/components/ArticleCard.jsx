@@ -10,7 +10,7 @@ export function writingCover(article) {
 export default function ArticleCard({ article }) {
   const path = "/writings/" + article.id;
   return <article className="m-entry">
-    <img src={writingCover(article)} alt="" loading="lazy" width="172" height="129"/>
+    <Link to={path} aria-label={"Read " + article.title}><img src={writingCover(article)} alt="" loading="lazy" width="348" height="240"/></Link>
     <div><h3><Link to={path}>{article.title}</Link></h3>
       <p>{article.excerpt}</p>
       <Link className="m-link" to={path}>Read full post<span className="sr-only"> — {article.title}</span></Link>

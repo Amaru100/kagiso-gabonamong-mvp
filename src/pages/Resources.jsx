@@ -10,8 +10,8 @@ export default function Resources() {
     <section className="m-wrap m-page">
       <SectionHeader
         eyebrow="Resources"
-        title="Free Downloads"
-        text="Downloadable PDF resources for clarity, goals, daily discipline, and idea validation."
+        title="Ideas worth keeping."
+        text="Guides and resources on visualization, meditation, awareness and personal development."
       />
       <div className="grid gap-8 sm:grid-cols-2">
         {resources.map((resource) => (

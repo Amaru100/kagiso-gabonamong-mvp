@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   for (const key of [
     "OWNER_PASSWORD",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ENQUIRY_RATE_SECRET",
     "CONTENT_GITHUB_TOKEN",
     "CONTENT_REPO",
     "CONTENT_BRANCH",
@@ -29,6 +33,15 @@ export default defineConfig(({ mode }) => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             const path = req.url?.split("?")[0];
+            if (path.startsWith("/media/")) {
+              const {default: media} = await import("./api/media.js");
+              req.url = "/api/media?file=" + encodeURIComponent(path.slice(7));
+              return media(req,res);
+            }
+            if (path === "/api/enquiry") {
+              const {default: enquiry} = await import("./server/enquiry-handler.js");
+              return enquiry(req,res);
+            }
             if (path !== "/api/admin" && path !== "/api/content") return next();
             const { default: admin, contentHandler } =
               await import("./server/admin-handler.js");

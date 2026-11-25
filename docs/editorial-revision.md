@@ -1,15 +1,24 @@
 # Editorial revision
 
-## Mystic Mind
+`design-reference/mystic-mind-fixed-covers-and-about.html` is the baseline for the November production preparation. The homepage retains its exact headline, introductory paragraph and philosophical statement. The previous all-in-one sections became standalone routes. The newsletter preview was removed.
 
-Mystic Mind uses Inter, a #050505 foundation, #F8F8F8 primary text, #A8A8A8 body text, #777777 metadata, and restrained #06402B accents with #85B79A highlights. Cards use #0C0C0C and #101010. The reference composition uses a 770px editorial column and an 1180px header and footer. The hero scales to 72px, and major sections use 145px desktop and 100px mobile spacing.
+The original article titles, excerpts, complete reader HTML and embedded artwork were extracted into editable records and individual PNG assets. The supplied Kagiso, Kimberley, Thuto and Thapelo photographs replace reference placeholders. Both PDFs are served separately, byte-for-byte identical to their supplied originals, with each first page rendered as a cover. The older resources, events, guides, own-books route and legacy article URLs remain available.
 
-The checked-in source reference is design-reference/kagiso-approved.html. Its eye, open book and lightbulb drawings are extracted into public/sketches with the noise filters removed. Public writing previews use deterministic artwork for legacy placeholder covers and respect custom covers.
+The public site retains Inter, a #050505 foundation, restrained #06402B and #85B79A accents, the narrow editorial column and smooth, grain-free lighting. Touch input disables the cursor effect, and reduced motion disables atmospheric movement and header transitions. The fixed header reserves its normal height and hides after five seconds of inactivity. Scroll, the top edge, keyboard input and a visible disclosure control restore it.
 
-Two smooth radial glows drift over a 28-second cycle. A fine-pointer cursor light updates CSS custom properties in requestAnimationFrame. Touch and reduced-motion modes disable cursor lighting, and reduced motion also stops ambient drift. Decorative layers stay behind content and ignore pointer input.
+## Recommended covers
 
-Recommended Books and Books have separate routes and use the same owner collection. Featured recommendations require an approved published entry with a cover, author and owner note. Resource, writing, book and biography grids adapt to narrow viewports. The navigation disclosure supports keyboard focus and Escape. Work With Me and Contact share validated fields and contact configuration.
+The source record is `src/data/content.json`. The eight entries keep the approved order and descriptions. We retained the reference's remote display URLs and ISBN fallbacks, with a visible placeholder if both sources fail. No third-party covers were bundled.
 
-## Implementation baseline
+| Book | Reference image source | Reference fallback ISBN |
+| --- | --- | --- |
+| The Complete Works of Florence Scovel Shinn | Crossword | 9780486476988 |
+| Neville Goddard: The Complete Reader | Repro India | 9788195988228 |
+| Parallel Universes of Self | Walmart | 9781008987487 |
+| The Quantum Leap Strategy | Pritchett | 9780944002087 |
+| Outwitting the Devil | Faith & Flame | 9781454900672 |
+| The Kybalion | Walmart | 9789355842183 |
+| Prometheus Rising | UmLivro | 9780692710609 |
+| Hidden Power: How to Unleash the Power of Your Subconscious Mind | Apple Books catalog | 9780133878257 |
 
-The prior Vite SPA had home, about, writings and article detail, books, resources, premium guides, events, Work With Me, Contact, and owner routes. It used a single books collection with a type and sample flag. The owner editor used a signed password session and saved locally to JSON or through GitHub on Vercel. The existing Vercel rewrite preserved SPA deep links and excluded the API. The project had six temporary writing covers and three real book covers attached to sample recommendations. The initial isolated Node test command hit a Windows child-process restriction.
+Confirm the edition and production use permission for each third-party image before launch. The PDF covers and writing artwork are supplied project assets. Review the testimonial publication permissions with the owner.

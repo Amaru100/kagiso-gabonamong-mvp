@@ -1,3 +1,4 @@
+import { useContent } from "./context/ContentContext.jsx";
 import { Route, Routes, useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "./components/Navbar.jsx";
@@ -14,14 +15,18 @@ import Admin from "./pages/Admin.jsx";
 import AmbientBackground from "./components/AmbientBackground.jsx";
 import SiteMetadata from "./components/SiteMetadata.jsx";
 import WorkWithMe from "./pages/WorkWithMe.jsx";
+import Mission from "./pages/Mission.jsx";
+import Testimonials from "./pages/Testimonials.jsx";
+import Privacy from "./pages/Privacy.jsx";
 import Contact from "./pages/Contact.jsx";
 
 export default function App() {
+  const {loading,error} = useContent();
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  if (pathname === "/admin") return <Admin />;
+  if (pathname === "/admin" || pathname === "/admin/login") return <Admin />;
   return (
     <div className="m-site min-h-screen">
       <AmbientBackground />
@@ -29,8 +34,11 @@ export default function App() {
       <a href="#main-content" className="m-skip">Skip to content</a>
       <Navbar />
       <main id="main-content" tabIndex={-1}>
-        <Routes>
+        {loading ? <p className="m-wrap m-page" role="status">Loading Mystic Mind?</p> : error ? <p className="m-wrap m-page" role="alert">{error}</p> : <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/mission" element={<Mission />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/about" element={<About />} />
           <Route path="/writings" element={<Writings />} />
           <Route path="/writings/:id" element={<Writing />} />
@@ -52,7 +60,7 @@ export default function App() {
               </section>
             }
           />
-        </Routes>
+        </Routes>}
       </main>
       <Footer />
     </div>

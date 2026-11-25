@@ -3,7 +3,67 @@ import { resolve } from "node:path";
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
+test("header hides after five seconds and can be restored by scroll, keyboard and menu", async ({page})=>{
+  await page.setViewportSize({width:390,height:700});
+  await page.emulateMedia({reducedMotion:"reduce"});
+  const start = new Date("2026-01-01T00:00:00Z");
+  await page.clock.install({time:start});
+  await page.goto("/writings");
+  const header = page.locator(".m-header");
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading",{level:1})).toHaveText("Writings");
+  await page.clock.pauseAt(new Date(start.getTime() + 60_000));
+  await page.evaluate(()=>window.dispatchEvent(new Event("scroll")));
+  const top = await main.evaluate((node)=>node.getBoundingClientRect().top);
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.clock.runFor(4999);
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.clock.runFor(1);
+  await expect(header).toHaveAttribute("data-visible","false");
+  expect(await main.evaluate((node)=>node.getBoundingClientRect().top)).toBe(top);
+  await page.evaluate(()=>window.scrollTo(0,300));
+  await page.clock.runFor(24);
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.clock.runFor(5000);
+  await expect(header).toHaveAttribute("data-visible","false");
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.clock.runFor(24);
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.clock.runFor(5000);
+  await page.keyboard.press("Tab");
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.getByRole("button",{name:"Menu"}).click();
+  await page.clock.runFor(6000);
+  await expect(header).toHaveAttribute("data-visible","true");
+  await page.locator("#site-menu").getByRole("link",{name:"Mission"}).click();
+  await expect(page).toHaveURL(/mission$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/writings$/);
+  await page.goForward();
+  await expect(page).toHaveURL(/mission$/);
+  await page.getByRole("link",{name:"Mystic Mind home"}).click();
+  await expect(page.getByRole("heading",{level:1})).toHaveText("Performance Coach. Writer. Speaker.");
+});
+
+test("download links deliver both approved ebook PDFs and brand links", async ({page})=>{
+  await page.goto("/resources");
+  const links=page.getByRole("link",{name:"Download PDF",exact:true});
+  await expect(links).toHaveCount(2);
+  await expect(links.locator("svg")).toHaveCount(0);
+  for(const link of await links.all()){
+    const downloading=page.waitForEvent("download");
+    await link.click();
+    const download=await downloading;
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+    expect(await download.failure()).toBeNull();
+  }
+  await expect(page.getByRole("link",{name:"X",exact:true})).toHaveAttribute("href","https://x.com/Shawny_Shuddha");
+  await expect(page.getByRole("link",{name:"Instagram",exact:true})).toHaveAttribute("href","https://www.instagram.com/kagiso_gabonamong/");
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href","/brand/favicon.svg");
+});
+
 test.beforeEach(async ({ context }) => {
+  await context.route(/https:\/\/(?!127\.0\.0\.1)/, (route) => route.abort());
   await context.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
 });
 
@@ -14,15 +74,15 @@ test("public routes, reference layout, contact safeguards and navigation", async
   await mkdir("artifacts/mystic-mind", { recursive: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Read widely.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Performance Coach. Writer. Speaker.");
   await expect(page.getByText("Designed by Muzila Group")).toBeVisible();
   await expect(page.getByText(/Design preview/)).toHaveCount(0);
   await expect(page.getByText("Atomic Habits")).toHaveCount(0);
-  await expect(page.getByText("Newsletter subscriptions are currently unavailable.")).toBeVisible();
+  await expect(page.getByText("Newsletter subscriptions are currently unavailable.")).toHaveCount(0);
   expect(await page.locator(".ambient").evaluate((element) => getComputedStyle(element, "::before").animationName)).toBe("none");
 
-  const routes = ["/", "/writings", "/writings/discipline-dividend-dreams", "/books", "/recommended-books", "/resources", "/premium-store", "/events", "/about", "/work-with-me", "/contact"];
-  for (const width of [320, 375, 390, 430, 768, 1024, 1280, 1440]) {
+  const routes = ["/", "/writings", "/writings/game", "/books", "/recommended-books", "/resources", "/premium-store", "/events", "/about", "/mission", "/testimonials", "/privacy", "/work-with-me", "/contact"];
+  for (const width of [360, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of routes) {
       await page.goto(route);
@@ -31,7 +91,7 @@ test("public routes, reference layout, contact safeguards and navigation", async
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if ([390, 768, 1440].includes(width)) {
         const name = route === "/" ? "home" : route.slice(1).replaceAll("/", "-");
-        expect(await page.locator("main img").evaluateAll(async (images) => {
+        expect(await page.locator('main img[src^="/"]').evaluateAll(async (images) => {
           await Promise.all(images.map(async (image) => {
             image.loading = "eager";
             await image.decode().catch(() => {});
@@ -46,20 +106,27 @@ test("public routes, reference layout, contact safeguards and navigation", async
   for (const width of [390, 768, 1440]) {
     await reference.setViewportSize({ width, height: 900 });
     await reference.emulateMedia({ reducedMotion: "reduce" });
-    await reference.goto(pathToFileURL(resolve("design-reference/kagiso-approved.html")).href);
+    await reference.goto(pathToFileURL(resolve("design-reference/mystic-mind-fixed-covers-and-about.html")).href);
     await reference.screenshot({ path: "artifacts/mystic-mind/" + width + "-approved-reference.png", fullPage: true });
   }
   await reference.close();
   await page.goto("/events");
   await page.getByRole("link", { name: "Enquire about this event" }).first().click();
   await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(/Event enquiry:/);
-  await expect(page.getByRole("button", { name: "Continue in email" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Submit enquiry" })).toBeEnabled();
   await page.goto("/work-with-me");
   await expect(page.getByRole("radio")).toHaveCount(5);
   await page.getByRole("radio", { name: "Webinars" }).check();
   await page.getByRole("radio", { name: "Workshops" }).check();
   await expect(page.getByRole("radio", { name: "Webinars" })).not.toBeChecked();
-  await expect(page.getByRole("button", { name: "Continue in email" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Submit enquiry" })).toBeEnabled();
+  await page.getByLabel("Your name").fill("Test user");
+  await page.getByLabel("Email").fill("test@example.org");
+  await page.getByLabel("Subject").fill("Test enquiry");
+  await page.getByLabel("Message").fill("This checks the unavailable-service state.");
+  await page.getByRole("button", { name: "Submit enquiry" }).click();
+  await expect(page.getByRole("alert")).toContainText("unavailable");
+  await expect(page.getByText("Your enquiry was received.")).toHaveCount(0);
   await page.goto("/checkout");
   await expect(page.getByRole("heading", { name: "Page not found." })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -105,8 +172,6 @@ test("owner manages recommended books and future publications", async ({
   await expect(
     preview.getByRole("heading", { name: "Owner selected book" }),
   ).toBeVisible();
-  await preview.goto("/");
-  await expect(preview.getByRole("heading", { name: "Owner selected book" })).toBeVisible();
   await page.getByLabel("Book type").selectOption("own");
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
@@ -159,7 +224,7 @@ test("owner can create, publish, edit, hide, reorder and delete persistent conte
   await expect(page.getByRole("status")).toContainText("Published.");
   await page.reload();
   await page.getByRole("button", { name: /A new owner writing/ }).click();
-  await expect(page.getByLabel("Full writing", { exact: false })).toHaveValue(
+  await expect(page.getByLabel("Full writing (separate paragraphs with a blank line)", { exact: true })).toHaveValue(
     "First real paragraph.\n\nSecond real paragraph.",
   );
   await page

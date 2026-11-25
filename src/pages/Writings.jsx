@@ -18,6 +18,6 @@ export default function Writings() {
         <option value="">All categories</option>{categories.map((name) => <option key={name}>{name}</option>)}
       </select></label>}
     </div>
-    {visible.length ? visible.map((article) => <ArticleCard key={article.id} article={article}/>) : <p role="status">No writings match your search.</p>}
+    {visible.length ? <div className="m-writing-grid">{visible.map((article) => <ArticleCard key={article.id} article={article}/>)}</div> : <p role="status">No writings match your search.</p>}
   </section>;
 }

@@ -1,57 +1,11 @@
-# Owner workspace
+# Using the Mystic Mind owner workspace
 
-Open **/admin** directly. Enter the owner password. The workspace manages writings, books, events, free resources, guides, homepage text, contact details, author story, and portrait. No coding or developer is needed for regular content updates once the hosting setup below is complete.
-
-## Regular use
-
-1. Choose a tab and an entry, or use **Add**. New entries start as drafts hidden from the website.
-2. Edit the fields. For writings, enter plain text in **Full writing**; put a blank line between paragraphs. HTML and Markdown are not interpreted.
-3. Choose one of the three pencil illustrations, or paste an HTTPS URL for your own hosted image. Use an HTTPS download URL for a resource. Portraits also use a hosted image URL. The dashboard does not upload files; upload them to your preferred media service first.
-4. Turn on **Visible on website** when ready. Turn it off to unpublish without deleting. Arrow controls change the display order.
-5. Select **Publish changes**. The success message confirms a durable save. Until then, changes are only in the current editor; closing the page loses unpublished edits.
-6. Use **View site** to review. Sign out on shared computers. Sessions expire after four hours; the password is never stored in browser storage.
-
-**Remove** asks for confirmation and takes effect on publishing. Deleting a writing removes its public URL. Keep the URL ID unchanged when editing an existing article unless you intend to change its address. IDs must be unique, lowercase letters/numbers/hyphens. The workspace supports up to 500 entries per collection and a 900KB total publish request. Split very large content libraries into a dedicated CMS when necessary.
-
-If another session publishes while you edit, your save is rejected instead of overwriting their changes. Copy your pending edits somewhere safe, reload, and reapply them to the latest content. If a session expires, retain/copy any pending text and sign in again. Browser refreshes warn before discarding unpublished work.
-
-## Adding books
-
-Choose **Books → Add book**. Enter the title, author, cover URL, and a short explanation in **Why recommend it / book description**. You can add an optional HTTPS details link. Select **Recommended book** for the Recommended Books page, or **Kagiso's own book** for the separate Books page. Choose a matching local cover or paste an approved cover URL. Enter a personal recommendation from Kagiso. Mark a recommendation **Featured on homepage** to include it among the first four eligible books in display order. Use Move up and Move down to reorder.
-
-The initial Atomic Habits, Deep Work, and Meditations entries are samples, not his confirmed endorsements. Edit or remove them when he shares his list. Clear **Sample selection, awaiting approval** once he approves an entry. Use **Visible on website** and **Publish changes** to make it public. Books support the same reorder, hide, delete and conflict protection as writings.
-
-## One-time local setup
-
-Copy `.env.example` to `.env.local`. Set `OWNER_PASSWORD` to a unique password of at least 16 characters (a password-manager generated value of 32+ characters is recommended). Leave `CONTENT_GITHUB_TOKEN` empty for local development. Restart `npm run dev` after changing environment values.
-
-Local publishing writes `src/data/content.json` on disk. Those local changes still need a Git commit/push to reach production. The browser tests use a separate temporary copy and never overwrite your actual content.
-
-## One-time Vercel setup
-
-In the Vercel **kagiso-gabonamong** project, open **Settings → Environment Variables**, and add these server-only values for Production:
-
-| Variable               | Value                                                                                                             |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `OWNER_PASSWORD`       | A unique secret password, at least 16 characters; share only with the owner through a secure channel              |
-| `CONTENT_GITHUB_TOKEN` | A fine-grained GitHub access token limited to `Amaru100/kagiso-gabonamong-mvp`, with **Contents: read and write** |
-| `CONTENT_REPO`         | `Amaru100/kagiso-gabonamong-mvp`                                                                                  |
-| `CONTENT_BRANCH`       | `main`                                                                                                            |
-
-Never prefix secrets with `VITE_`, put them in source code, or send them in public messages. This repository contains an empty example only. Redeploy after adding the environment variables. Do not give Preview deployments a write token for the production branch; use a separate content branch/repository if preview publishing is needed. GitHub branch protections must permit the publishing identity to commit content.
-
-On Vercel, **Publish changes** commits the content file to GitHub using a server function. All visitors read the latest published content through `/api/content`; the bundled public snapshot is used if GitHub is temporarily unavailable. A connected Vercel Git integration can also rebuild the static snapshot after each content commit. GitHub history provides a backup of published changes. Pull the latest commits before doing development work, because owner publishing creates new commits on the branch.
-
-The dashboard deliberately stays locked if the password is missing or too short. Publishing stays unavailable until the repository token is configured. The public website works without either secret. This task adds and tests the publishing feature; it does not provision a new GitHub token or choose the owner's password.
-
-## Security and maintenance
-
-Requests require a signed HttpOnly, SameSite=Strict session cookie and same-origin writes. Production cookies are Secure. Drafts are omitted from both public API payloads and frontend bundles. They are still stored in the GitHub content file and its history; a public repository makes that source content public. Use a private repository for unpublished material that must remain confidential. Content is validated server-side; URL fields accept HTTPS URLs or simple root-relative paths, and writing bodies render as text. Sessions expire after four hours; rotating `OWNER_PASSWORD` immediately invalidates existing sessions.
-
-Failed logins are throttled to eight attempts per IP per 15 minutes **within a running function instance**. That counter is not shared across Vercel instances or restarts. Configure a Vercel Firewall rate-limit rule for POST `/api/admin` if exposing this shared-password login on a busy public site; use a managed identity provider when multiple editors and individual accounts are needed. Keep the owner password long and unique, limit the token to this repository, and rotate/renew the token before expiry. A single owner login does not provide separate editor roles or an audit log of individual users.
-
-## Enquiries and newsletter
-
-Set **Contact email** under **Site & author** to a confirmed business inbox and publish. Work With Me and Contact both use this setting. Until it is configured, the pages display a setup notice and disable the email action. Work With Me requires one enquiry type. Contact accepts general messages, and event, resource and guide links can prefill its subject. Both pages validate the fields and open a draft in the visitor's email app. The visitor sends it from there.
-
-Set **Newsletter signup URL** to your hosted signup page. Without a URL, the homepage shows that subscriptions are unavailable. The site does not collect newsletter addresses.
+1. Open the website and add `/admin` to its address. Sign in with the email and password provided during setup.
+2. **Writings.** Select **Add writing**, enter the title and URL ID, and add your article. The rich content editor includes formatting controls and a Preview toggle. Keep the existing URL ID when editing a published piece. Leave **Visible on website** unchecked to save a private draft. Check it and select **Publish changes** when ready.
+3. **Media library.** Upload a PDF or image under 3 MB. Enter useful alternative text for images. Open it to check the file, then copy its path and paste it into the relevant editor field.
+4. **Resources.** Add the title, author, page count, description, cover path and ebook path. Choose PDF as the format for an ebook. Reorder using the arrow controls and publish.
+5. **Books.** Choose Recommended book for your reading list or Kagiso’s own book for your publications. Add a cover, author, notes and an optional link. Reorder with the arrow controls and publish.
+6. **Testimonials.** Add the person’s name, description, photo and complete quotation. Confirm their permission before publishing. Preserve their wording.
+7. **Site & author.** Update the biography, photograph, mission and appropriate public settings. Select **Publish changes** to save.
+8. **Enquiries.** Search, filter by type and open the message in the dashboard. Mark it read, replied to or archived. The dashboard stores messages when the backend is configured. It does not send replies.
+9. Use **Sign out** on shared devices. If a concurrent edit prevents saving, copy your pending text before reloading the latest version.

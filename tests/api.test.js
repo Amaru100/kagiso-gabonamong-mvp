@@ -1,4 +1,76 @@
 import test, { after, beforeEach } from "node:test";
+
+test("approved articles and supplied PDFs are preserved", async () => {
+  const html = await readFile(new URL("../design-reference/mystic-mind-fixed-covers-and-about.html", import.meta.url),"utf8");
+  for (const article of fixture.articles.slice(0,3)) {
+    const raw = html.match(new RegExp('id="reader-'+article.id+'"[\\s\\S]*?<div class="reader-body">([\\s\\S]*?)</div><a class="reader-back'))[1];
+    assert.equal(raw.replace(/<h1>[\s\S]*?<\/h1>/,"").trim(),article.bodyHtml);
+    assert.equal(publicContent(fixture).articles.find((item)=>item.id===article.id).bodyHtml,article.bodyHtml);
+  }
+  const {createHash} = await import("node:crypto");
+  const expected = ["bcc6eac5435069674f249e00246a211aefa74c7e7068d07d58c19cca02e71e98","220fa874e9a883d05984368b274193dae628581f302534bc124dd8661eea0b3c"];
+  for (const [index,resource] of fixture.resources.slice(0,2).entries()) {
+    const file = await readFile(new URL("../public"+resource.url,import.meta.url));
+    assert.equal(createHash("sha256").update(file).digest("hex"),expected[index]);
+  }
+});
+
+test("rich text keeps editorial formatting while dropping unsafe markup", async () => {
+  const {sanitizeRichText} = await import("../src/richText.js");
+  const rendered = sanitizeRichText('<p onclick="x()">Hello <em>world</em></p><svg onload="x()"></svg><a href="javascript:alert(1)">link</a>');
+  assert.equal(rendered,"<p>Hello <em>world</em></p><a>link</a>");
+});
+
+test("enquiries report unavailable, validation failure, throttling and persisted success", async (t) => {
+  const {default:enquiry} = await import("../server/enquiry-handler.js");
+  const input = {id:"3771de80-6424-47fd-b702-346ef751291c",type:"service",category:"Workshops",name:"Editor Test",email:"test@example.org",subject:"Workshop",message:"Interested"};
+  assert.equal((await call("POST",{...input,email:"bad"},null,{},enquiry)).status,400);
+  assert.equal((await call("POST",input,null,{},enquiry)).status,503);
+  assert.equal((await call("GET",null,null,{},enquiry)).status,405);
+  const config = {SUPABASE_URL:"https://test.invalid",SUPABASE_SERVICE_ROLE_KEY:"test-key",ENQUIRY_RATE_SECRET:"test-rate-key"};
+  Object.assign(process.env,config);
+  t.after(()=>{for (const key of Object.keys(config)) delete process.env[key];});
+  let submissions = 0;
+  t.mock.method(globalThis,"fetch", async (url, options) => {
+    assert.match(url,/mystic_submit_enquiry$/);
+    const args = JSON.parse(options.body);
+    assert.equal(args.entry.category,"Workshops");
+    assert.match(args.fingerprint,/^[0-9a-f]{64}$/);
+    return Response.json(++submissions === 1 ? "saved" : "limited");
+  });
+  assert.deepEqual((await call("POST",input,null,{},enquiry)).body,{ok:true});
+  assert.equal((await call("POST",input,null,{},enquiry)).status,429);
+});
+
+test("configured CMS verifies administrator role and protects private modules", async (t) => {
+  const config = {SUPABASE_URL:"https://test.invalid",SUPABASE_ANON_KEY:"test-anon",SUPABASE_SERVICE_ROLE_KEY:"test-key"};
+  Object.assign(process.env,config);
+  t.after(()=>{for (const key of Object.keys(config)) delete process.env[key];});
+  const id = "3771de80-6424-47fd-b702-346ef751291c";
+  t.mock.method(globalThis,"fetch",async (url)=>{
+    if (url.endsWith("/user")) return Response.json({id});
+    if (url.includes("mystic_admins")) return Response.json([{role:"content_admin"}]);
+    if (url.includes("mystic_content")) return Response.json([{content:fixture,revision:id}]);
+    if (url.includes("mystic_enquiries")) return Response.json([]);
+    assert.fail("Unexpected database request: "+url);
+  });
+  const endpoint = (view) => (req,res)=>handler({...req,url:"/api/admin?view="+view},res);
+  assert.equal((await call("GET",null,null,{},endpoint("enquiries"))).status,401);
+  assert.equal((await call("POST",{},null,{},endpoint("media"))).status,401);
+  assert.equal((await call("PUT",{id,role:"super_admin"},"mm_session=test-token",{},endpoint("administrators"))).status,403);
+  assert.equal((await call("GET",null,"mm_session=test-token",{},endpoint("activity"))).status,403);
+  assert.deepEqual((await call("GET",null,"mm_session=test-token",{},endpoint("enquiries"))).body,{records:[]});
+  assert.equal((await call("GET",null,"mm_session=test-token")).body.role,"content_admin");
+});
+
+test("media rejects mismatched signatures and oversized uploads", async () => {
+  const { checkedMedia } = await import("../server/media.js");
+  const input = {type:"application/pdf",alt:"",name:"test.pdf"};
+  assert.throws(()=>checkedMedia({...input,data:Buffer.from("<html>spoofed PDF</html>").toString("base64")}),/valid PDF/);
+  assert.throws(()=>checkedMedia({...input,data:Buffer.alloc(3_000_001).toString("base64")}),/under 3 MB/);
+  const file = await readFile(new URL("../public/ebooks/the-5-principles.pdf",import.meta.url));
+  assert.equal(checkedMedia({...input,data:file.toString("base64")}).extension,"pdf");
+});
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -34,7 +106,7 @@ test("book content remains compatible with older content files and validates cov
   content.books[1].featured = true;
   assert.equal(
     publicContent(validateContent(content)).books.length,
-    1,
+    fixture.books.filter((book)=>!book.sample && book.published !== false).length - 1,
   );
   assert.equal(publicContent(validateContent(content)).books[0].featured, true);
 });
@@ -266,7 +338,7 @@ test("malformed JSON is rejected and production without publishing secrets serve
   try {
     const signedIn = await call("POST", {
       password: process.env.OWNER_PASSWORD,
-    });
+    }, null, {origin:"https://localhost:5173"});
     assert.match(signedIn.headers["set-cookie"], /; Secure/);
     const cookie = signedIn.headers["set-cookie"].split(";")[0];
     assert.equal((await call("GET", null, cookie)).status, 503);
