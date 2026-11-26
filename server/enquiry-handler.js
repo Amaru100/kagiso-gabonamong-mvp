@@ -29,7 +29,8 @@ export default async function enquiryHandler(req,res) {
     const input = validateEnquiry(await bodyOf(req));
     if (!input) return send(400,{error:"Check the enquiry fields and try again."});
     if (!databaseReady() || !process.env.ENQUIRY_RATE_SECRET) return send(503,{error:"Online enquiries are currently unavailable."});
-    const ip = req.headers["x-vercel-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
+    const ip = req.worker ? req.headers["cf-connecting-ip"] || "unknown" :
+      req.headers["x-vercel-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
     const fingerprint = createHmac("sha256",process.env.ENQUIRY_RATE_SECRET).update(ip).digest("hex");
     const result = await rows("rpc/mystic_submit_enquiry",{method:"POST",body:{entry:input, fingerprint}});
     if (result === "limited") return send(429,{error:"Too many enquiries. Try again later."});

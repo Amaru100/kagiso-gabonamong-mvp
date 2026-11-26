@@ -9,7 +9,8 @@ const types = {
 };
 
 export function checkedMedia({type,data,alt,name}) {
-  const bytes = typeof data === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(data) ? Buffer.from(data,"base64") : Buffer.alloc(0);
+  const bytes = Buffer.isBuffer(data) ? data :
+    typeof data === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(data) ? Buffer.from(data,"base64") : Buffer.alloc(0);
   if (!Object.hasOwn(types,type) || bytes.length < 12 || bytes.length > 3_000_000 || !types[type][1](bytes))
     throw requestError(400,"Choose a valid PDF, PNG, JPEG or WebP under 3 MB.");
   if (typeof name !== "string" || !name.trim() || name.length > 180 || typeof alt !== "string" || alt.length > 300)

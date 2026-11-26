@@ -10,3 +10,4 @@ Use Node 24 with `npm ci`, then `npm run dev`. The checked-in approved content i
 - `npm run test:e2e` runs Playwright. Install Chromium with `npx playwright install chromium` or set `PLAYWRIGHT_CHANNEL=msedge` if Edge is already installed.
 - `npm run build` builds the Vercel frontend. `npm run preview` serves static files only.
 - See [production setup](docs/production.md), [editorial notes](docs/editorial-revision.md), and [Kagiso’s owner guide](docs/owner-guide.md).
+- For the Cloudflare Workers Free deployment of `mysticmind.co.bw`, use the [Cloudflare deployment guide](docs/cloudflare.md).

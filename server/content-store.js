@@ -2,13 +2,15 @@ import { databaseEnabled, rows, requestError } from "./database.js";
 import { readFile, writeFile, rename } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import bundledContent from "../src/data/content.json" with { type: "json" };
 
-const file =
+const file = () =>
   (!process.env.VERCEL && process.env.CONTENT_FILE) ||
   fileURLToPath(new URL("../src/data/content.json", import.meta.url));
 const revision = (data) => createHash("sha256").update(data).digest("hex");
 const branch = () => process.env.CONTENT_BRANCH || "main";
 export async function fallbackContent() {
+  if (process.env.CLOUDFLARE_WORKER) return structuredClone(bundledContent);
   return JSON.parse(
     await readFile(
       new URL("../src/data/content.json", import.meta.url),
@@ -31,6 +33,7 @@ export async function readContent() {
     if (!record) throw requestError(503, "Initial content must be seeded before publishing.");
     return record;
   }
+  if (process.env.CLOUDFLARE_WORKER) return { content: await fallbackContent(), revision: null };
   if (process.env.VERCEL || process.env.CONTENT_GITHUB_TOKEN) {
     if (!process.env.CONTENT_GITHUB_TOKEN)
       throw Object.assign(
@@ -56,7 +59,7 @@ export async function readContent() {
       revision: data.sha,
     };
   }
-  const data = await readFile(file, "utf8");
+  const data = await readFile(file(), "utf8");
   return { content: JSON.parse(data), revision: revision(data) };
 }
 let localWrite = Promise.resolve();
@@ -66,6 +69,7 @@ export async function saveContent(content, expectedRevision, actor) {
     if (!revision) throw requestError(409, "Content changed. Reload before publishing.");
     return {revision};
   }
+  if (process.env.CLOUDFLARE_WORKER) throw requestError(503, "Supabase is required to publish on Cloudflare.");
   if (process.env.VERCEL || process.env.CONTENT_GITHUB_TOKEN) {
     const response = await fetch(endpoint(), {
       method: "PUT",
@@ -108,8 +112,8 @@ export async function saveContent(content, expectedRevision, actor) {
           { status: 409 },
         );
       const data = JSON.stringify(content, null, 2) + "\n";
-      await writeFile(file + ".tmp", data);
-      await rename(file + ".tmp", file);
+      await writeFile(file() + ".tmp", data);
+      await rename(file() + ".tmp", file());
       return { revision: revision(data) };
     });
   localWrite = operation;

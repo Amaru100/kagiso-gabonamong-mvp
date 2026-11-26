@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "preview": "vite preview",
-    "test": "node --test tests/api.test.js",
+    "test": "node --test tests/api.test.js tests/worker.test.js",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "wrangler": "4.168.0"
   }
 }
