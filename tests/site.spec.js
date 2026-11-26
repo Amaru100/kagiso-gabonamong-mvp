@@ -161,6 +161,25 @@ test("public routes, reference layout, contact safeguards and navigation", async
   expect(errors).toEqual([]);
 });
 
+test("password setup confirms matching passwords and returns to admin sign-in", async ({page}) => {
+  let submissions = 0;
+  await page.route("**/api/admin?view=setup", async route => {
+    submissions++;
+    await route.fulfill({json:{ok:true}});
+  });
+  await page.goto("/admin/setup#token=" + "a".repeat(56));
+  await page.getByLabel("New password", {exact:true}).fill("fixture-password");
+  await page.getByLabel("Confirm password", {exact:true}).fill("different-password");
+  await page.getByRole("button", {name:"Save password"}).click();
+  await expect(page.getByRole("alert")).toHaveText("The passwords must match.");
+  expect(submissions).toBe(0);
+  await page.getByLabel("Confirm password", {exact:true}).fill("fixture-password");
+  await page.getByRole("button", {name:"Save password"}).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole("status")).toHaveText("Password saved. Sign in with your new password.");
+  expect(submissions).toBe(1);
+});
+
 test("owner manages recommended books and future publications", async ({
   page,
 }) => {

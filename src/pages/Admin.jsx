@@ -118,7 +118,7 @@ async function request(method = "GET", data, view) {
 }
 export default function Admin() {
   const navigate = useNavigate();
-  const {pathname} = useLocation();
+  const {pathname,state} = useLocation();
   const [mode,setMode] = useState("");
   const [role,setRole] = useState("");
   const [uploadTransport,setUploadTransport] = useState("");
@@ -162,7 +162,7 @@ export default function Admin() {
     load()
       .catch((e) => {
         if (e.mode) setMode(e.mode);
-        if (e.status === 401 && pathname !== "/admin/login") navigate("/admin/login",{replace:true});
+        if (e.status === 401 && pathname !== "/admin/login") navigate("/admin/login",{replace:true,state});
         if (e.status !== 401 || e.message.includes("setup"))
           setError(e.message);
       })
@@ -315,6 +315,7 @@ export default function Admin() {
         </Link>
         <p className="eyebrow mt-16">Kagiso Gabonamong / Private workspace</p>
         <h1 className="display-heading mt-4">Owner login</h1>
+        {state?.passwordSetupComplete && <p role="status" className="admin-success mt-5">Password saved. Sign in with your new password.</p>}
         <p className="mt-5 leading-7 text-[#bbc6bf]">
           Add and edit writings, books, events, resources, and author details.
         </p>
