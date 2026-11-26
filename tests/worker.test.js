@@ -105,3 +105,87 @@ test("Worker accepts protected binary uploads and streams published media", asyn
   assert.equal(response.headers.get("Content-Disposition"),'attachment; filename="File.pdf"');
   assert.equal(await response.text(),pdf);
 });
+
+test("Dashboard uses exact enquiry counts and protects activity and administrator management", async (t) => {
+  let role = "content_admin";
+  configure(t,async (url,options)=>{
+    if (url.endsWith("/user")) return Response.json({id:userId,email:"editor@example.org"});
+    if (url.includes("mystic_admins")) return Response.json([{role}]);
+    if (url.includes("mystic_enquiries")) {
+      assert.equal(options.headers.Prefer,"count=exact");
+      return Response.json([{id:userId}],{headers:{"Content-Range":"0-0/247"}});
+    }
+    if (url.includes("mystic_activity")) {
+      assert.equal(role,"super_admin");
+      return Response.json([{id:"audit",action:"publish"}]);
+    }
+    assert.fail("Unexpected upstream route");
+  });
+  const headers={cookie:session};
+  assert.equal((await call("/api/admin?view=overview")).status,401);
+  assert.deepEqual(await (await call("/api/admin?view=overview",{headers})).json(),{unread:247,activity:[]});
+  assert.equal((await call("/api/admin?view=administrators",{method:"PUT",headers:{...headers,origin},body:"{}"})).status,403);
+  role="super_admin";
+  assert.deepEqual(await (await call("/api/admin?view=overview",{headers})).json(),{unread:247,activity:[{id:"audit",action:"publish"}]});
+});
+
+test("Password changes require a same-origin session and correct current password", async (t) => {
+  let updates=0;
+  configure(t,async (url,options)=>{
+    if (url.endsWith("/user") && options.method==="GET") return Response.json({id:userId,email:"editor@example.org"});
+    if (url.includes("mystic_admins")) return Response.json([{role:"content_admin"}]);
+    if (url.includes("/token?")) {
+      const {email,password}=JSON.parse(options.body);
+      assert.equal(email,"editor@example.org");
+      return password==="fixture-old-password" ? Response.json({user:{id:userId},access_token:"fixture-fresh-token"}) : new Response(null,{status:400});
+    }
+    if (url.endsWith("/user") && options.method==="PUT") {
+      updates++;
+      assert.equal(options.headers.Authorization,"Bearer fixture-fresh-token");
+      assert.deepEqual(JSON.parse(options.body),{password:"fixture-new-password",current_password:"fixture-old-password"});
+      return Response.json({id:userId});
+    }
+    if (url.endsWith("/logout?scope=global")) return new Response(null,{status:204});
+    assert.fail("Unexpected upstream route");
+  });
+  const change=(headers,currentPassword,newPassword="fixture-new-password")=>call("/api/admin?view=password",{
+    method:"POST",headers,body:JSON.stringify({currentPassword,newPassword}),
+  });
+  assert.equal((await change({origin},"fixture-old-password")).status,401);
+  assert.equal((await change({cookie:session},"fixture-old-password")).status,403);
+  assert.equal((await change({origin,cookie:session},"wrong-password")).status,401);
+  assert.equal((await change({origin,cookie:session},"fixture-old-password","short")).status,400);
+  const success=await change({origin,cookie:session},"fixture-old-password");
+  assert.equal(success.status,200);
+  assert.deepEqual(await success.json(),{ok:true});
+  assert.match(success.headers.get("Set-Cookie"),/Max-Age=0/);
+  assert.equal(updates,1);
+});
+
+test("An administrator can set a password with an unused recovery link without returning tokens", async (t) => {
+  const tokenHash="a".repeat(56);
+  let used=false;
+  configure(t,async (url,options)=>{
+    if (url.endsWith("/verify")) {
+      assert.deepEqual(JSON.parse(options.body),{token_hash:tokenHash,type:"recovery"});
+      if (used) return new Response(null,{status:400});
+      used=true;
+      return Response.json({user:{id:userId},access_token:"test-token"});
+    }
+    if (url.endsWith("/user") && options.method==="GET") return Response.json({id:userId});
+    if (url.includes("mystic_admins")) return Response.json([{role:"content_admin"}]);
+    if (url.endsWith("/user") && options.method==="PUT") {
+      assert.deepEqual(JSON.parse(options.body),{password:"fixture-setup-password"});
+      return Response.json({id:userId});
+    }
+    if (url.endsWith("/logout?scope=global")) return new Response(null,{status:204});
+    assert.fail("Unexpected upstream route");
+  });
+  const setup=(headers)=>call("/api/admin?view=setup",{method:"POST",headers,body:JSON.stringify({tokenHash,newPassword:"fixture-setup-password"})});
+  assert.equal((await setup({})).status,403);
+  const result=await setup({origin});
+  assert.equal(result.status,200);
+  assert.deepEqual(await result.json(),{ok:true});
+  assert.match(result.headers.get("Set-Cookie"),/Max-Age=0/);
+  assert.equal((await setup({origin})).status,400);
+});

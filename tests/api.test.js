@@ -405,3 +405,12 @@ test("production seed accepts a bodyless insert and preserves existing content",
   await import("../scripts/seed.mjs");
   assert.deepEqual(calls, ["POST", "GET"]);
 });
+
+test("rich text media keeps only approved local URLs and safe image attributes", async () => {
+  const {sanitizeRichText}=await import("../src/richText.js");
+  const url="/media/466b19ef-16af-42ef-a1e8-c889c675778a.jpg";
+  const html='<h4>Heading</h4><u>Underlined</u><img src="'+url+'" alt="A & B" onerror="alert(1)"><img src="https://example.org/file.jpg"><img src="/media/elsewhere.jpg"><a href="javascript:alert(1)">Link</a>';
+  const expected='<h4>Heading</h4><u>Underlined</u><img src="'+url+'" alt="A &amp; B"><a>Link</a>';
+  assert.equal(sanitizeRichText(html),expected);
+  assert.equal(sanitizeRichText(expected),expected);
+});

@@ -1,4 +1,4 @@
-const tags = new Set(["p", "h2", "h3", "h4", "h5", "blockquote", "ul", "ol", "li", "em", "strong", "b", "i", "hr", "br", "a"]);
+const tags = new Set(["p", "h1", "h6", "u", "img", "h2", "h3", "h4", "h5", "blockquote", "ul", "ol", "li", "em", "strong", "b", "i", "hr", "br", "a"]);
 
 export function sanitizeRichText(value) {
   return value.replace(/<[^>]*>|</g, (token) => {
@@ -7,8 +7,13 @@ export function sanitizeRichText(value) {
     const [, end, rawTag, attrs] = match;
     const tag = rawTag.toLowerCase();
     if (!tags.has(tag)) return "";
+    if (tag === "img") {
+      const source = /(?:^|\s)src="(\/media\/[0-9a-f-]{36}\.(?:jpg|png|webp))"/.exec(attrs)?.[1];
+      const alt = /(?:^|\s)alt="([^"<>]*)"/.exec(attrs)?.[1] || "";
+      return !end && source ? '<img src="' + source + '" alt="' + alt.replace(/&(?!(?:amp;|quot;|lt;|gt;))/g, "&amp;") + '">' : "";
+    }
     if (tag === "a" && !end) {
-      const url = /\bhref="(https:\/\/[^"<>\s]+)"/i.exec(attrs)?.[1];
+      const url = /(?:^|\s)href="(https:\/\/[^"<>\s]+)"/i.exec(attrs)?.[1];
       return url ? '<a href="' + url.replace(/&(?!(?:amp;))/g, "&amp;") + '" rel="noreferrer">' : "<a>";
     }
     return "<" + end + tag + ">";

@@ -1,5 +1,5 @@
 import { uploadMedia } from "./media.js";
-import { administrator, authRequest, databaseEnabled, rows, requestError } from "./database.js";
+import { administrator, authRequest, databaseRequest, databaseEnabled, rows, requestError } from "./database.js";
 import { createHmac, timingSafeEqual, scrypt as rawScrypt } from "node:crypto";
 import { promisify } from "node:util";
 import { readContent, saveContent, fallbackContent } from "./content-store.js";
@@ -84,6 +84,22 @@ async function databaseAdmin(req, res, send) {
   const mode = new URL(req.url || "/api/admin", "http://localhost").searchParams.get("view");
   if (req.method !== "GET" && !sameOrigin(req)) return send(403,{error:"This request must come from this website."});
   const token = (req.headers.cookie || "").match(/(?:^|;\s*)mm_session=([^;]+)/)?.[1];
+  if (mode === "setup" && req.method === "POST") {
+    const {tokenHash,newPassword} = await bodyOf(req,8192);
+    if (typeof tokenHash !== "string" || !/^[a-z0-9]{40,128}$/i.test(tokenHash) ||
+      typeof newPassword !== "string" || newPassword.length < 12 || Buffer.byteLength(newPassword) > 72)
+      return send(400,{error:"Use a valid setup link and a password of at least 12 characters and at most 72 bytes."});
+    const verified = await authRequest("verify",{method:"POST",body:{token_hash:tokenHash,type:"recovery"}});
+    if (!verified.ok) return send(verified.status === 429 ? 429 : verified.status >= 500 ? 503 : 400,{error:"This setup link has expired, was already used, or cannot be verified. Ask the site developer for a new link."});
+    const session = await verified.json();
+    const member = await administrator(session.access_token);
+    if (!member || member.id !== session.user?.id) return send(403,{error:"This account is not authorised for the workspace."});
+    const changed = await authRequest("user",{method:"PUT",token:session.access_token,body:{password:newPassword}});
+    await authRequest("logout?scope=global",{method:"POST",token:session.access_token}).catch(()=>{});
+    if (!changed.ok) return send(400,{error:"The password could not be set. Ask the site developer for a new link."});
+    cookie(res,"",0,"mm_session");
+    return send(200,{ok:true});
+  }
   if (req.method === "DELETE") {
     cookie(res,"",0,"mm_session");
     if (token) await authRequest("logout", { method:"POST", token });
@@ -106,6 +122,27 @@ async function databaseAdmin(req, res, send) {
   }
   const actor = await administrator(token);
   if (!actor) return send(401,{mode:"supabase",error:"Sign in to manage the website."});
+  if (mode === "overview" && req.method === "GET") {
+    const response = await databaseRequest("mystic_enquiries?select=id&status=eq.new&limit=1",{prefer:"count=exact"});
+    const count = response.headers.get("Content-Range")?.match(/\/(\d+)$/)?.[1];
+    const activity = actor.role === "super_admin" ? await rows("mystic_activity?order=created_at.desc&limit=5") : [];
+    return send(200,{unread:response.ok && count !== undefined ? Number(count) : null,activity});
+  }
+  if (mode === "password" && req.method === "POST") {
+    const {currentPassword,newPassword} = await bodyOf(req,8192);
+    if (!actor.email || typeof currentPassword !== "string" || !currentPassword || currentPassword.length > 512 ||
+      typeof newPassword !== "string" || newPassword.length < 12 || Buffer.byteLength(newPassword) > 72 || currentPassword === newPassword)
+      return send(400,{error:"Enter your current password and a different new password of at least 12 characters and at most 72 bytes."});
+    const verified = await authRequest("token?grant_type=password",{method:"POST",body:{email:actor.email,password:currentPassword}});
+    if (!verified.ok) return send(verified.status === 429 ? 429 : verified.status >= 500 ? 503 : 401,{error:"Could not verify the current password. Check it or try again later."});
+    const session = await verified.json();
+    if (session.user?.id !== actor.id || !session.access_token) return send(401,{error:"Could not verify this account."});
+    const changed = await authRequest("user",{method:"PUT",token:session.access_token,body:{password:newPassword,current_password:currentPassword}});
+    if (!changed.ok) return send(changed.status >= 500 ? 503 : 400,{error:"Could not update the password. Choose a stronger password or try again later."});
+    cookie(res,"",0,"mm_session");
+    await authRequest("logout?scope=global",{method:"POST",token:session.access_token}).catch(()=>{});
+    return send(200,{ok:true});
+  }
   if (mode === "media") {
     if (req.method === "GET") return send(200,{records:await rows("mystic_media?select=path,url,type,alt,name&order=created_at.desc&limit=200")});
     if (req.method === "POST") {
@@ -151,7 +188,7 @@ async function databaseAdmin(req, res, send) {
     }
   }
   if (mode) return send(405,{error:"Method not allowed."});
-  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role, ...(req.worker ? {uploadTransport:"binary"} : {})});
+  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role, email:actor.email, accountId:actor.id, ...(req.worker ? {uploadTransport:"binary"} : {})});
   if (req.method === "PUT") {
     const body = await bodyOf(req);
     let content;

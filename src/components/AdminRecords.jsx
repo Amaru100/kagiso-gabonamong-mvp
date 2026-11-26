@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
+import { uploadAdminMedia } from "./MediaPicker.jsx";
 
-async function request(view, method = "GET", body, headers) {
+async function request(view, method = "GET", body) {
   const response = await fetch("/api/admin?view=" + view, {
-    method, headers:headers || {"Content-Type":"application/json"}, body:headers ? body : JSON.stringify(body),
+    method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(body),
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error);
   return result;
 }
 
-export default function AdminRecords({ role, uploadTransport }) {
-  const [view,setView] = useState("enquiries");
+export default function AdminRecords({ role, uploadTransport, initialView = "enquiries" }) {
+  const [view,setView] = useState(initialView);
   const [records,setRecords] = useState(null);
   const [query,setQuery] = useState("");
   const [error,setError] = useState("");
   const [type,setType] = useState("");
   const [version,setVersion] = useState(0);
+  const [uploading,setUploading] = useState(false);
   useEffect(() => {
     let current = true;
     request(view).then(({records}) => {if(current) setRecords(records);}).catch((error) => {if(current) setError(error.message);});
@@ -27,28 +29,14 @@ export default function AdminRecords({ role, uploadTransport }) {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const file = formData.get("file");
-    if (!file?.size || file.size > 3000000) {setError("Choose a file under 3 MB.");return;}
     setError("");
+    setUploading(true);
     try {
-      const alt = formData.get("alt");
-      if (uploadTransport === "binary") {
-        await request("media","POST",file,{
-          "Content-Type":file.type,
-          "X-Media-Name":encodeURIComponent(file.name),
-          "X-Media-Alt":encodeURIComponent(alt),
-        });
-      } else {
-        const data = await new Promise((resolve,reject)=>{
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(",")[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        await request("media","POST",{data,type:file.type,name:file.name,alt});
-      }
+      await uploadAdminMedia(file,formData.get("alt"),uploadTransport);
       form.reset();
       setVersion((value)=>value+1);
     } catch (error) {setError(error.message || "Upload failed.");}
+    finally {setUploading(false);}
   }
   async function update(body) {
     setError("");
@@ -77,8 +65,11 @@ export default function AdminRecords({ role, uploadTransport }) {
     {view === "media" && <>
       <form className="m-form" onSubmit={upload}><label>Image or PDF<input required className="admin-input" type="file" name="file" accept="application/pdf,image/png,image/jpeg,image/webp" /></label>
       <label>Alternative text<input className="admin-input" name="alt" maxLength={300} /></label>
-      <button className="admin-primary">Upload</button></form>
-      <ul>{records?.map((item)=><li className="mt-4" key={item.path}><a className="underline" href={item.url} target="_blank" rel="noreferrer">{item.name}</a> <button type="button" className="admin-button" onClick={()=>navigator.clipboard.writeText(item.url).catch(()=>setError("Copy the path shown below."))}>Copy path</button> <code>{item.url}</code></li>)}</ul>
+      <button className="admin-primary" disabled={uploading}>{uploading ? "Uploading..." : "Upload"}</button></form>
+      <ul>{records?.map((item)=><li className="admin-media-current mt-4" key={item.path}>
+        {item.type.startsWith("image/") && <img src={item.url} alt={item.alt || ""} loading="lazy" />}
+        <a className="underline" href={item.url} target="_blank" rel="noreferrer">{item.name}</a>
+      </li>)}</ul>
     </>}
     {view === "activity" && <ul>{records?.map((item)=><li key={item.id}>{new Date(item.created_at).toLocaleString()} · {item.actor} · {item.action} · {item.target}</li>)}</ul>}
     {view === "enquiries" && records && <>

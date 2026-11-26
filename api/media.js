@@ -1,3 +1,4 @@
+import { sanitizeRichText } from "../src/richText.js";
 import { administrator, databaseReady, rows } from "../server/database.js";
 import { readContent } from "../server/content-store.js";
 import { publicContent } from "../server/validation.js";
@@ -15,9 +16,10 @@ export default async function handler(req,res) {
     if (!actor) {
       const { content } = await readContent();
       const published = publicContent(content);
-      const listed = published.settings.authorPhoto === url ||
+      const inline = (html) => sanitizeRichText(html || "").includes('<img src="' + url + '" ');
+      const listed = published.settings.authorPhoto === url || inline(published.settings.authorBioHtml) || inline(published.settings.missionHtml) ||
         Object.values(published).some((collection) => Array.isArray(collection) &&
-          collection.some((item) => [item.url,item.image,item.cover].includes(url)));
+          collection.some((item) => [item.url,item.image,item.cover].includes(url) || inline(item.bodyHtml)));
       if (!listed) { res.statusCode=404; return res.end(); }
     }
     const [record] = await rows("mystic_media?path=eq."+id+"&select=type,name");

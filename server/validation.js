@@ -89,6 +89,8 @@ const fields = {
 const settingFields = [
   "authorName",
   "authorBio",
+  "authorBioHtml",
+  "missionHtml",
   "authorPhoto",
   "heroTitle",
   "heroDescription",
@@ -176,9 +178,9 @@ export function validateContent(value) {
     throw new Error("Missing site settings.");
   result.settings = {};
   for (const field of settingFields) {
-    const optional = ["siteName","seoDescription","heroThought","mission","instagram","x","newsletterUrl", "recommendationsDescription"].includes(field);
+    const optional = ["authorBioHtml","missionHtml","siteName","seoDescription","heroThought","mission","instagram","x","newsletterUrl", "recommendationsDescription"].includes(field);
     if (optional && value.settings[field] === undefined) {
-      result.settings[field] = "";
+      if (!field.endsWith("Html")) result.settings[field] = "";
       continue;
     }
     if (
@@ -186,7 +188,7 @@ export function validateContent(value) {
       value.settings[field].length > 15000
     )
       throw new Error(`Invalid ${field}.`);
-    result.settings[field] = value.settings[field];
+    result.settings[field] = field.endsWith("Html") ? sanitizeRichText(value.settings[field]) : value.settings[field];
   }
   if (!result.settings.authorName.trim() || !result.settings.heroTitle.trim())
     throw new Error("Author name and homepage heading are required.");
