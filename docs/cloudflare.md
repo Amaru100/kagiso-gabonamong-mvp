@@ -26,6 +26,8 @@ In **Settings → Variables & Secrets**, set these runtime bindings as secrets. 
 
 Keep these values out of Cloudflare **build** variables and out of any variable beginning with `VITE_`. No Vercel password, Vercel token, or GitHub publishing token is needed on the Worker. Wrangler sets `SITE_ORIGIN=https://mysticmind.co.bw` and `CLOUDFLARE_WORKER=1`. The Cloudflare build command defaults the public Vite canonical origin to the same HTTPS URL.
 
+The pinned compatibility date applies Cloudflare's Node.js compatibility defaults, including populating `process.env` from runtime string bindings and secrets. Preserve that date or use a newer date with those defaults enabled. [Cloudflare Node.js process compatibility](https://developers.cloudflare.com/workers/runtime-apis/nodejs/process/)
+
 If Supabase is already provisioned, reuse its data and administrator accounts. For a fresh database, apply the existing migrations and seed once as described in [production setup](production.md). In Supabase Auth, set the Site URL and any existing allowed redirect URLs to the new HTTPS domain as appropriate. Existing sessions on the old hostname require a new sign-in. The seed sets `info@mysticmind.co.bw` for new content stores. For an existing database, update the contact email under **Site & author** if needed. Enquiries continue to go to the CMS. Email delivery is a separate integration.
 
 `wrangler.jsonc` attaches `mysticmind.co.bw` as a Worker Custom Domain. Review **Domains & Routes** before the initial cutover. If Cloudflare reports a conflicting record for the web hostname, review that specific web record before replacing it. Leave existing MX records and mail-related TXT and CNAME records, including SPF, DKIM and DMARC, intact. GitHub branch deployments and custom-domain changes happen when the build/deploy runs on the configured production branch.
@@ -35,6 +37,7 @@ If Supabase is already provisioned, reuse its data and administrator accounts. F
 ```sh
 npm ci
 npm run build:cloudflare
+npm run test:workerd
 npx wrangler deploy --dry-run
 npx wrangler dev
 ```

@@ -24,7 +24,7 @@ export async function uploadMedia(input, actor) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const path = randomUUID() + "." + extension;
   const response = await fetch(base+"/storage/v1/object/mystic-media/"+path,{
-    method:"POST", headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":type},body:bytes,signal:AbortSignal.timeout(15000),
+    method:"POST", redirect:"manual", headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":type},body:bytes,signal:AbortSignal.timeout(15000),
   });
   if (!response.ok) throw requestError(503,"The upload could not be saved.");
   const url = "/media/"+path;
@@ -33,8 +33,9 @@ export async function uploadMedia(input, actor) {
     return item;
   } catch (error) {
     await fetch(base+"/storage/v1/object/mystic-media",{
-      method:"DELETE",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({prefixes:[path]}),signal:AbortSignal.timeout(10000),
+      method:"DELETE",redirect:"manual",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({prefixes:[path]}),signal:AbortSignal.timeout(10000),
     }).catch(()=>{});
     throw error;
   }
 }
+import { Buffer } from "node:buffer";

@@ -26,7 +26,7 @@ export default async function enquiryHandler(req,res) {
   if (req.method !== "POST") return send(405,{error:"Method not allowed."});
   if (!sameOrigin(req)) return send(403,{error:"Submit from this website."});
   try {
-    const input = validateEnquiry(await bodyOf(req));
+    const input = validateEnquiry(await bodyOf(req, 32768));
     if (!input) return send(400,{error:"Check the enquiry fields and try again."});
     if (!databaseReady() || !process.env.ENQUIRY_RATE_SECRET) return send(503,{error:"Online enquiries are currently unavailable."});
     const ip = req.worker ? req.headers["cf-connecting-ip"] || "unknown" :

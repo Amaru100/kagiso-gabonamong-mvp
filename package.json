@@ -9,6 +9,7 @@
     "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "preview": "vite preview",
     "test": "node --test tests/api.test.js tests/worker.test.js",
+    "test:workerd": "node tests/workerd-smoke.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

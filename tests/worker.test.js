@@ -38,7 +38,8 @@ test("Worker serves fallback content, sitemap and unindexed SPA admin shell", as
 });
 
 test("Worker admin sessions are secure and use the authorised Supabase role", async (t) => {
-  configure(t,async (url)=>{
+  configure(t,async (url,options)=>{
+    assert.equal(options.redirect,"manual");
     if (url.includes("/token?")) return Response.json({access_token:"test-token",expires_in:3600});
     if (url.endsWith("/user")) return Response.json({id:userId});
     if (url.includes("mystic_admins")) return Response.json([{role:"content_admin"}]);
@@ -47,6 +48,7 @@ test("Worker admin sessions are secure and use the authorised Supabase role", as
   });
   const credentials = {method:"POST",body:JSON.stringify({email:"admin@example.org",password:"test-password"})};
   assert.equal((await call("/api/admin",{...credentials,headers:{origin:"http://mysticmind.co.bw"}})).status,403);
+  assert.equal((await call("/api/admin",{...credentials,headers:{origin,"content-length":"8193"}})).status,413);
   const login = await call("/api/admin",{...credentials,headers:{origin}});
   assert.equal(login.status,200);
   assert.match(login.headers.get("Set-Cookie"),/^mm_session=test-token;.*HttpOnly; SameSite=Strict;.*Secure$/);
@@ -57,6 +59,7 @@ test("Worker admin sessions are secure and use the authorised Supabase role", as
 test("Worker uses Cloudflare visitor IP for enquiries and preserves UTF-8 JSON", async (t) => {
   const ip = "192.0.2.8";
   configure(t,async (url,options)=>{
+    assert.equal(options.redirect,"manual");
     assert.match(url,/mystic_submit_enquiry$/);
     const {entry,fingerprint}=JSON.parse(options.body);
     assert.equal(entry.message,"Olá e boa tarde.");

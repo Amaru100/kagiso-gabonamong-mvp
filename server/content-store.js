@@ -119,3 +119,4 @@ export async function saveContent(content, expectedRevision, actor) {
   localWrite = operation;
   return operation;
 }
+import { Buffer } from "node:buffer";

@@ -90,10 +90,13 @@ async function databaseAdmin(req, res, send) {
     return send(200,{ok:true});
   }
   if (req.method === "POST" && !mode) {
-    const { email, password } = await bodyOf(req);
+    const body = await bodyOf(req, 8192);
+    const { email, password } = body || {};
     if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > 512)
       return send(400,{error:"Enter your email and password."});
     const response = await authRequest("token?grant_type=password",{method:"POST",body:{email,password}});
+    if ((response.status >= 300 && response.status < 400) || response.status >= 500)
+      return send(503,{error:"Administrator sign-in is temporarily unavailable."});
     if (!response.ok) return send(response.status === 429 ? 429 : 401,{error:"Sign-in failed. Check your credentials or try again later."});
     const session = await response.json();
     const actor = await administrator(session.access_token);
@@ -287,3 +290,4 @@ export async function contentHandler(req, res) {
     }
   }
 }
+import { Buffer } from "node:buffer";

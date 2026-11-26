@@ -24,7 +24,7 @@ export default async function handler(req,res) {
     if (!record) { res.statusCode=404; return res.end(); }
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const response = await fetch(process.env.SUPABASE_URL.replace(/\/$/,"")+"/storage/v1/object/authenticated/mystic-media/"+id,
-      {method:req.method,headers:{apikey:key, Authorization:"Bearer "+key},signal:AbortSignal.timeout(12000)});
+      {method:req.method,redirect:"manual",headers:{apikey:key, Authorization:"Bearer "+key},signal:AbortSignal.timeout(12000)});
     if (!response.ok) { res.statusCode=503; return res.end(); }
     res.setHeader("Content-Type",record.type);
     if (record.type === "application/pdf") {
@@ -38,3 +38,4 @@ export default async function handler(req,res) {
     return res.end();
   }
 }
+import { Buffer } from "node:buffer";
