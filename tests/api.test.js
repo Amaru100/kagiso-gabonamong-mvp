@@ -380,3 +380,28 @@ test("contact placeholders are gated and email drafts encode fields", async () =
   assert.match(draft.searchParams.get("body"), /Enquiry type: Workshops\r\nName: Jane & Jim/);
   assert.match(draft.searchParams.get("body"), /Line one\nLine two/);
 });
+
+test("production seed accepts a bodyless insert and preserves existing content", async (t) => {
+  const settings = { SUPABASE_URL: "https://test.invalid", SUPABASE_SERVICE_ROLE_KEY: "fixture-key" };
+  const previous = Object.fromEntries(Object.keys(settings).map((name) => [name, process.env[name]]));
+  Object.assign(process.env, settings);
+  t.after(() => {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+  const calls = [];
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    calls.push(options.method);
+    if (options.method === "POST") {
+      assert.match(url, /mystic_content\?on_conflict=id$/);
+      assert.match(options.headers.Prefer, /ignore-duplicates,return=minimal/);
+      return new Response(null, { status: 201 });
+    }
+    assert.equal(options.method, "GET");
+    return Response.json([{ content: fixture, revision: "original" }]);
+  });
+  await import("../scripts/seed.mjs");
+  assert.deepEqual(calls, ["POST", "GET"]);
+});

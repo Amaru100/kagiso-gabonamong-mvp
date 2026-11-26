@@ -1,13 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { rows } from "../server/database.js";
+import { databaseRequest, rows } from "../server/database.js";
 import { removeLegacyPlaceholders } from "../server/legacy-placeholders.js";
 import { validateContent } from "../server/validation.js";
 
 const content = validateContent(JSON.parse(await readFile(new URL("../src/data/content.json",import.meta.url),"utf8")));
-await rows("mystic_content?on_conflict=id", {
+const inserted = await databaseRequest("mystic_content?on_conflict=id", {
   method:"POST", body:{id:1,content}, prefer:"resolution=ignore-duplicates,return=minimal",
 });
+if (!inserted.ok) throw new Error("Could not initialize production content.");
 // Compare revisions so cleanup never overwrites simultaneous CMS edits.
 for (let attempt = 0; attempt < 3; attempt++) {
   const [record] = await rows("mystic_content?id=eq.1&select=content,revision");
