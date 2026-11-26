@@ -809,3 +809,25 @@ textarea.admin-input {
     padding-top: 30px;
   }
 }
+.admin-shell .mm-admin-header { position: sticky; top: 0; z-index: 10; background: #050505; padding: .8rem 0; }
+.mm-account { overflow-wrap: anywhere; color: #a8a8a8; font-size: .85rem; }
+.mm-admin-layout { display: grid; grid-template-columns: 190px minmax(0,1fr); gap: 1.5rem; }
+.mm-admin-nav nav, .mm-admin-summary { display: grid; gap: .6rem; }
+.mm-admin-nav summary { padding: .6rem; cursor: pointer; }
+.mm-admin-nav button { text-align: left; justify-content: flex-start; }
+.mm-admin-nav button[aria-pressed=true] { background: #06402b; color: #f8f8f8; }
+.mm-admin-summary { grid-template-columns: repeat(auto-fit,minmax(min(100%,165px),1fr)); }
+.mm-admin-summary button { text-align: left; }
+.mm-admin-summary strong { display: block; font-size: 1.4rem; margin-bottom: .4rem; }
+.admin-rich-toolbar, .admin-media-current { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.admin-rich-document { min-height: 240px; border: 1px solid #414141; background: #101010; padding: 1rem; margin-top: .7rem; overflow-wrap: anywhere; }
+.admin-rich-document:focus { outline: 2px solid #85b79a; outline-offset: 2px; }
+.admin-rich-document img { max-width: 100%; height: auto; }
+.admin-rich-count { color: #a8a8a8; padding: .5rem 0; }
+.admin-media-picker, .admin-media-tools, .admin-inline-tools { display: grid; gap: .6rem; margin: .5rem 0; }
+.admin-media-current img { width: 85px; height: 85px; object-fit: contain; }
+.admin-shell details > summary { cursor: pointer; margin-bottom: .5rem; }
+@media (max-width: 850px) {
+  .mm-admin-layout { grid-template-columns: minmax(0,1fr); }
+  .mm-admin-nav nav { grid-template-columns: repeat(auto-fit,minmax(min(100%,140px),1fr)); }
+}

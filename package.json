@@ -13,6 +13,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@tiptap/extension-image": "3.35.0",
+    "@tiptap/react": "3.35.0",
+    "@tiptap/starter-kit": "3.35.0",
     "framer-motion": "latest",
     "lucide-react": "latest",
     "react": "latest",

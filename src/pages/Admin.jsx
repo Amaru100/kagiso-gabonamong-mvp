@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminRecords from "../components/AdminRecords.jsx";
-import RichTextEditor from "../components/RichTextEditor.jsx";
+import MediaPicker from "../components/MediaPicker.jsx";
+import RichTextEditor, { paragraphsFromText } from "../components/RichTextEditor.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowDown,
@@ -13,15 +14,22 @@ import {
 } from "lucide-react";
 import { useContent } from "../context/ContentContext.jsx";
 const sections = {
+  overview: "Overview",
   articles: "Writings",
-  books: "Books",
+  books: "Recommended books",
   events: "Events",
   resources: "Resources",
   products: "Guides",
   testimonials: "Testimonials",
-  settings: "Site & author",
+  author: "Site and author",
+  settings: "Settings",
+  mission: "Mission",
+  enquiries: "Enquiries",
+  media: "Media library",
+  administrators: "Administrator management",
 };
 const fields = {
+  mission: [["missionHtml","Mission statement","rich"]],
   testimonials: [["title","Name"],["id","ID"],["description","Professional description"],["image","Photograph URL"],["quote","Complete quotation","body"]],
   books: [
     ["title", "Title"],
@@ -42,10 +50,9 @@ const fields = {
     ["date", "Publication date"],
     ["excerpt", "Short introduction", "textarea"],
     ["image", "Cover image URL"],
-    ["bodyHtml","Rich article content","rich"],
+    ["bodyHtml","Article text","rich"],
     ["seoTitle","SEO title"],
     ["seoDescription","SEO description","textarea"],
-    ["body", "Full writing (separate paragraphs with a blank line)", "body"],
   ],
   events: [
     ["title", "Title"],
@@ -72,16 +79,18 @@ const fields = {
     ["category", "Category"],
     ["description", "Description", "textarea"],
   ],
-  settings: [
+  author: [
     ["authorName", "Author name"],
-    ["authorBio", "Author biography", "body"],
+    ["authorBioHtml", "Author biography", "rich"],
     ["authorPhoto", "Author photograph URL"],
     ["heroTitle", "Homepage heading", "textarea"],
     ["heroDescription", "Homepage introduction", "textarea"],
+    ["heroThought","Homepage philosophical statement","textarea"],
+  ],
+  settings: [
     ["siteName","Site name"],
     ["seoDescription","Default SEO description","textarea"],
-    ["heroThought","Homepage philosophical statement","textarea"],
-    ["mission","Mission statement","body"],
+
     ["instagram","Instagram URL"],
     ["x","X URL"],
     ["email", "Contact email"],
@@ -91,8 +100,8 @@ const fields = {
     ["location", "Location"],
   ],
 };
-async function request(method = "GET", data) {
-  const response = await fetch("/api/admin", {
+async function request(method = "GET", data, view) {
+  const response = await fetch("/api/admin" + (view ? "?view=" + view : ""), {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -117,21 +126,37 @@ export default function Admin() {
   const { setContent } = useContent();
   const [draft, setDraft] = useState(null);
   const [revision, setRevision] = useState("");
-  const [section, setSection] = useState("articles");
+  const [section, setSection] = useState("overview");
   const [selected, setSelected] = useState(0);
+  const settingsSection = ["settings","mission","author"].includes(section);
+  const [overview,setOverview] = useState(null);
+  const [account,setAccount] = useState("");
+  const [baseline,setBaseline] = useState(null);
+  const [backupKey,setBackupKey] = useState("");
+  const [saved,setSaved] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(true);
   const [dirty, setDirty] = useState(false);
+  useEffect(()=>{
+    if (section === "overview" && role) request("GET",undefined,"overview").then(setOverview).catch(()=>setOverview(null));
+  }, [section,role]);
   const load = async () => {
     const result = await request();
-    setDraft({ ...result.content, books: result.content.books || [], testimonials:result.content.testimonials || [] });
-    setRevision(result.revision);
+    const content = {...result.content, books:result.content.books || [], testimonials:result.content.testimonials || []};
+    const key = "mystic-draft:" + (result.accountId || "local");
+    let backup;
+    try { backup = JSON.parse(localStorage.getItem(key)); } catch { /* Storage is optional. */ }
+    setBaseline(content); setDraft(backup?.content || content);
+    setRevision(backup?.revision || result.revision); setBackupKey(key);
+    setDirty(Boolean(backup?.content)); setSaved(Boolean(backup?.content));
+    if (backup?.content && backup.revision !== result.revision) setError("The website has changed. Copy the edits you need, then discard this draft to reload.");
+    setAccount(result.email || "");
+    if (result.role) setMode("supabase");
     setRole(result.role || "");
     setUploadTransport(result.uploadTransport || "");
     if (pathname === "/admin/login") navigate("/admin", {replace:true});
-    setDirty(false);
   };
   useEffect(() => {
     load()
@@ -145,14 +170,23 @@ export default function Admin() {
   }, []);
   useEffect(() => {
     const warn = (event) => {
-      if (dirty) {
+      if (dirty && !saved) {
         event.preventDefault();
         event.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  }, [dirty,saved]);
+  function saveDraft() {
+    try {localStorage.setItem(backupKey,JSON.stringify({content:draft,revision}));setSaved(true);}
+    catch {setError("This browser could not save your draft. Keep this page open and copy your changes.");}
+  }
+  useEffect(()=>{
+    if (!dirty || saved || !backupKey) return;
+    const timer=setTimeout(saveDraft,700);
+    return ()=>clearTimeout(timer);
+  },[dirty,saved,backupKey,draft,revision]);
   const signIn = async (event) => {
     event.preventDefault();
     setBusy(true);
@@ -170,32 +204,42 @@ export default function Admin() {
   const publish = async () => {
     setBusy(true);
     setError("");
-    setStatus("");
+    setStatus("Publishing changes...");
     try {
       const result = await request("PUT", { content: draft, revision });
       setRevision(result.revision);
       setDraft(result.content);
+      setBaseline(result.content);
+      try { localStorage.removeItem(backupKey); } catch { /* Already saved on the server. */ }
       setContent(result.content);
       setDirty(false);
       setStatus(
         "Published. Your changes are saved and available on the website.",
       );
     } catch (e) {
+      setStatus("");
       setError(e.message);
     } finally {
       setBusy(false);
     }
   };
-  const change = (field, value) => {
+  const change = (field, value, additional = {}) => {
     setDirty(true);
+    setSaved(false);
     setStatus("");
     setDraft((current) =>
-      section === "settings"
-        ? { ...current, settings: { ...current.settings, [field]: value } }
+      settingsSection
+        ? { ...current, settings: { ...current.settings, [field]: value, ...additional } }
         : {
             ...current,
             [section]: current[section].map((item, index) =>
-              index === selected ? { ...item, [field]: value } : item,
+              index === selected ? {
+                ...item,
+                [field]: value,
+                ...additional,
+                ...(field === "bodyHtml" && !value ? {body:""} : {}),
+                ...articleSlug(section,field,value,item,current.articles,baseline.articles),
+              } : item,
             ),
           },
     );
@@ -217,6 +261,7 @@ export default function Admin() {
     setDraft({ ...draft, [section]: [...draft[section], item] });
     setSelected(draft[section].length);
     setDirty(true);
+    setSaved(false);
     setStatus("");
   };
   const remove = () => {
@@ -232,6 +277,7 @@ export default function Admin() {
     });
     setSelected(0);
     setDirty(true);
+    setSaved(false);
     setStatus("");
   };
   const move = (direction) => {
@@ -242,14 +288,17 @@ export default function Admin() {
     setDraft({ ...draft, [section]: items });
     setSelected(target);
     setDirty(true);
+    setSaved(false);
     setStatus("");
   };
   const logout = async () => {
-    if (dirty && !window.confirm("Discard unpublished changes and sign out?"))
+    if (dirty && !saved && !window.confirm("Sign out before your changes are saved in this browser?"))
       return;
     try {
       await request("DELETE");
       setDraft(null);
+      setSection("overview");
+      setSelected(0);
       navigate("/admin/login",{replace:true});
       setDirty(false);
       setStatus("");
@@ -294,78 +343,53 @@ export default function Admin() {
       </main>
     );
   const item =
-    section === "settings" ? draft.settings : draft[section][selected];
+    settingsSection ? draft.settings : draft[section]?.[selected];
   return (
     <main className="admin-shell">
-      <section className="mb-5" aria-label="Content overview">
-        <p>Published writings {draft.articles.filter((item)=>item.published !== false).length} ? Draft writings {draft.articles.filter((item)=>item.published === false).length} ? Resources {draft.resources.length} ? Testimonials {draft.testimonials.length} ? Recommended books {draft.books.filter((item)=>item.kind !== "own" && !item.sample).length}</p>
-      </section>
-      <fieldset disabled={busy} className="min-w-0">
-        <header className="admin-topbar">
-          <div>
-            <p className="eyebrow">Owner workspace</p>
-            <h1 className="mt-2 text-2xl font-semibold">Manage the website</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <a
-              href="/"
-              target="_blank"
-              rel="noreferrer"
-              className="admin-button"
-            >
-              <ExternalLink size={16} /> View site
-            </a>
-            <button className="admin-button" onClick={logout}>
-              <LogOut size={16} /> Sign out
-            </button>
-            <button
-              disabled={busy || !dirty}
-              className="admin-primary"
-              onClick={publish}
-            >
-              <Save size={16} />
-              {busy ? "Publishing…" : "Publish changes"}
-            </button>
-          </div>
-        </header>
-        <p className="mb-5 text-sm text-[#a5b9ac]">
-          {dirty ? "You have unpublished changes." : "Everything is saved."} New
-          entries start as drafts. Turn on “Visible on website” when ready.
-        </p>
-        {error && (
-          <p role="alert" className="admin-error mb-5">
-            {error}
-          </p>
-        )}
-        {status && (
-          <p role="status" className="admin-success mb-5">
-            {status}
-          </p>
-        )}
-        <nav aria-label="Content sections" className="admin-tabs">
-          {Object.entries(sections).map(([key, label]) => (
-            <button
-              key={key}
-              aria-pressed={section === key}
-              onClick={() => {
-                setSection(key);
-                setSelected(0);
-              }}
-            >
-              {label}
-              {key !== "settings" && <span>{draft[key].length}</span>}
-            </button>
-          ))}
-        </nav>
+      <header className="admin-topbar mm-admin-header">
+        <img src="/brand/logo-white.svg" width="124" alt="Mystic Mind" />
+        <div className="flex flex-wrap items-center gap-3">
+          {account && <span className="mm-account">{account} / {role === "super_admin" ? "Super Admin" : "Content Admin"}</span>}
+          <a href="/" className="admin-button" target="_blank" rel="noreferrer"><ExternalLink size={16} /> View website</a>
+          <button className="admin-button" onClick={logout}><LogOut size={16} /> Sign out</button>
+        </div>
+      </header>
+      <div className="mm-admin-layout">
+        <details className="mm-admin-nav" open>
+          <summary>Workspace menu</summary>
+          <nav aria-label="Content sections">
+            {Object.entries(sections).filter(([key])=>key==="administrators" ? role==="super_admin" : !["enquiries","media"].includes(key) || role).map(([key,label])=>
+              <button key={key} className="admin-button" aria-pressed={section===key} onClick={()=>{setSection(key);setSelected(0);}}>{label}</button>)}
+          </nav>
+        </details>
+        <fieldset disabled={busy} className="min-w-0">
+          <h1 className="text-2xl font-semibold mb-5">{section==="overview" ? "Manage the website" : sections[section]}</h1>
+          {dirty && <div className="flex flex-wrap items-center gap-3 mb-5">
+            <span>{saved ? "Draft saved in this browser. Changes are unpublished." : "You have unsaved changes."}</span>
+            <button className="admin-button" onClick={saveDraft}>Save draft</button>
+            <button className="admin-primary" onClick={publish}><Save size={16} /> {busy ? "Publishing?" : "Publish changes"}</button>
+            <button className="admin-button" onClick={()=>{
+              if (!window.confirm("Discard this draft?")) return;
+              try {localStorage.removeItem(backupKey);} catch { /* Storage is optional. */ }
+              setError("");load().catch(error=>setError(error.message));
+            }}>Discard draft</button>
+          </div>}
+          {error && <p role="alert" className="admin-error mb-5">{error}</p>}
+          {status && <p role="status" className="admin-success mb-5">{status}</p>}
+          {section==="overview" && <Overview content={baseline} overview={overview} role={role} go={setSection} />}
+          {["enquiries","media","administrators"].includes(section) && <AdminRecords key={section} initialView={section} role={role} uploadTransport={uploadTransport} />}
+          {section==="settings" && account && <PasswordChange onSuccess={()=>{setDraft(null);navigate("/admin/login",{replace:true});setError("Password changed. Sign in with your new password.");}} />}
+          {fields[section] && (
         <div
-          className={`admin-layout ${section === "settings" ? "settings-layout" : ""}`}
+          className={`admin-layout ${settingsSection ? "settings-layout" : ""}`}
         >
-          {section !== "settings" && (
+          {!settingsSection && (
             <aside>
               <button className="admin-button mb-4 w-full" onClick={add}>
                 <Plus size={17} /> Add{" "}
                 {section === "articles"
                   ? "writing"
+                  : section === "books" ? "book"
                   : sections[section].toLowerCase().replace(/s$/, "")}
               </button>
               <div className="admin-list">
@@ -393,7 +417,7 @@ export default function Admin() {
                 <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
                   <h2 className="text-2xl font-semibold">
                     {section === "settings"
-                      ? "Site & author details"
+                      ? sections[section] + " details"
                       : "Edit " +
                         (section === "articles"
                           ? "writing"
@@ -403,7 +427,7 @@ export default function Admin() {
                               ? "book"
                               : "resource")}
                   </h2>
-                  {section !== "settings" && (
+                  {!settingsSection && (
                     <div className="flex gap-2">
                       <button
                         aria-label="Move up"
@@ -427,7 +451,7 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
-                {section !== "settings" && (
+                {!settingsSection && (
                   <label className="mb-7 flex min-h-11 items-center gap-3 text-sm">
                     <input
                       type="checkbox"
@@ -453,9 +477,18 @@ export default function Admin() {
                     </label>
                   )}
                   {["books", "resources"].includes(section) && (section !== "books" || item.kind !== "own") && <label><input type="checkbox" checked={item.featured === true} onChange={(event) => change("featured", event.target.checked)} /> Featured on homepage</label>}
-                  {fields[section].map(([key, label, type]) => type === "rich" ? (
-                    <div key={key} className="admin-label"><span>{label}</span><RichTextEditor value={item[key] || ""} onChange={(value)=>change(key,value)} /></div>
-                  ) : (
+                  {fields[section].map(([key,label,type])=>{
+                    const pdf = section==="resources" && key==="url";
+                    const image = ["cover","image","authorPhoto"].includes(key);
+                    if (type==="rich") return <RichTextEditor key={key+selected} label={label}
+                      value={item[key] ?? paragraphsFromText(section==="articles" ? item.body : section==="mission" ? item.mission : item.authorBio)}
+                      onChange={(value,words)=>change(key,value,key==="bodyHtml" ? {readingTime:words ? Math.ceil(words/220) + " min read" : ""} : {})}
+                      mediaEnabled={!!role} uploadTransport={uploadTransport} />;
+                    if (role && (pdf || image)) return <div key={key}><p>{label.replace(/ URL.*$/, "")}</p>
+                      <MediaPicker type={pdf ? "pdf" : "image"} label={pdf ? "Choose PDF" : "Choose image"} value={item[key] || ""}
+                        onSelect={media=>change(key,media.url, section==="books" && key==="cover" && media.alt ? {coverAlt:media.alt} : {})} uploadTransport={uploadTransport} />
+                    </div>;
+                    const field = (
                     <label key={key} className="admin-label">
                       {label}
                       {type === "bookType" ? (
@@ -479,11 +512,14 @@ export default function Admin() {
                         <input
                           className="admin-input"
                           value={item[key] || ""}
+                          readOnly={section==="articles" && key==="id" && baseline.articles.some(entry=>entry.id===item.id && entry.published!==false)}
                           onChange={(event) => change(key, event.target.value)}
                         />
                       )}
                     </label>
-                  ))}
+                    );
+                    return section==="articles" && ["id","seoTitle","seoDescription"].includes(key) ? <details key={key}><summary>{label} (advanced)</summary>{field}</details> : field;
+                  })}
                 </div>
                 {section === "books" && (
                   <div className="mt-7">
@@ -530,19 +566,7 @@ export default function Admin() {
                         </button>
                       ))}
                     </div>
-                    <p className="mt-3 text-sm text-[#a5b9ac]">
-                      Use a hosted HTTPS image URL to replace these covers
-                      later. Writings use plain text; blank lines create
-                      paragraphs.
-                    </p>
                   </div>
-                )}
-                {section === "settings" && (
-                  <p className="mt-6 text-sm text-[#a5b9ac]">
-                    Leave the biography and photograph blank until the real
-                    story and images are ready. Use a hosted HTTPS image URL for
-                    the portrait.
-                  </p>
                 )}
               </>
             ) : (
@@ -552,8 +576,63 @@ export default function Admin() {
             )}
           </section>
         </div>
+      )}
       </fieldset>
-      {role && <AdminRecords role={role} uploadTransport={uploadTransport} />}
+      </div>
     </main>
   );
+}
+
+function articleSlug(section,field,value,item,articles,baseline) {
+  if (section!=="articles" || field!=="title" || baseline.some(entry=>entry.id===item.id)) return {};
+  const slug = title=>title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80).replace(/-$/,"");
+  const id=slug(value);
+  return id && (item.id.startsWith("new-") || item.id===slug(item.title)) &&
+    !articles.some(entry=>entry!==item && entry.id===id) ? {id} : {};
+}
+
+function Overview({content,overview,role,go}) {
+  const cards=[
+    ["Published writings",content.articles.filter(item=>item.published!==false).length,"articles"],
+    ["Draft writings",content.articles.filter(item=>item.published===false).length,"articles"],
+    ["Resources",content.resources.length,"resources"],
+    ["Recommended books",content.books.filter(item=>item.kind!=="own" && !item.sample).length,"books"],
+    ["Testimonials",content.testimonials.length,"testimonials"],
+    ["Unread enquiries",overview?.unread ?? "Unavailable","enquiries"],
+  ];
+  return <>
+    <div className="mm-admin-summary" aria-label="Content overview">{cards.map(([label,count,key])=>
+      <button disabled={!role && key==="enquiries"} className="admin-editor" key={label} onClick={()=>go(key)}><strong>{count}</strong>{label}</button>)}</div>
+    <button className="admin-button mt-5" onClick={()=>go("articles")}>Manage writings</button>
+    {role==="super_admin" && <section className="admin-editor mt-5">
+      <h2>Recent administrative activity</h2>
+      {overview?.activity?.length ? <ul>{overview.activity.map(item=><li key={item.id}>{new Date(item.created_at).toLocaleString()} / {item.action} / {item.target}</li>)}</ul> : <p>{overview ? "No recent administrative activity." : "Activity unavailable."}</p>}
+    </section>}
+  </>;
+}
+
+function PasswordChange({onSuccess}) {
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState("");
+  async function submit(event) {
+    event.preventDefault();
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    if (data.get("next")!==data.get("confirm")) {setError("The new passwords must match.");return;}
+    setBusy(true);setError("");
+    try {
+      await request("POST",{currentPassword:data.get("current"),newPassword:data.get("next")},"password");
+      form.reset();onSuccess();
+    } catch (error) {setError(error.message);}
+    finally {setBusy(false);}
+  }
+  return <details className="admin-editor mb-5"><summary>Change password</summary>
+    <form className="grid gap-4 mt-4" onSubmit={submit}>
+      <label className="admin-label">Current password<input className="admin-input" type="password" name="current" autoComplete="current-password" required maxLength={512} /></label>
+      <label className="admin-label">New password<input className="admin-input" type="password" name="next" autoComplete="new-password" required minLength={12} maxLength={72} /></label>
+      <label className="admin-label">Confirm new password<input className="admin-input" type="password" name="confirm" autoComplete="new-password" required minLength={12} maxLength={72} /></label>
+      <button className="admin-primary" disabled={busy}>{busy ? "Updating password..." : "Update password"}</button>
+      {error && <p className="admin-error" role="alert">{error}</p>}
+    </form>
+  </details>;
 }

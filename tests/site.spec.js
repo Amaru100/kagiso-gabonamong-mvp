@@ -167,7 +167,7 @@ test("owner manages recommended books and future publications", async ({
   await page.goto("/admin");
   await page.getByLabel("Owner password").fill("test-only-owner-password-42");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.getByRole("button", { name: /^Books/ }).click();
+  await page.getByRole("navigation", { name: "Content sections" }).getByRole("button", { name: "Recommended books", exact: true }).click();
   await page.getByRole("button", { name: "Add book", exact: true }).click();
   await page.getByLabel("Title", { exact: true }).fill("Owner selected book");
   await page.getByLabel("Author", { exact: true }).fill("A Book Author");
@@ -181,7 +181,7 @@ test("owner manages recommended books and future publications", async ({
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
   await page.reload();
-  await page.getByRole("button", { name: /^Books/ }).click();
+  await page.getByRole("navigation", { name: "Content sections" }).getByRole("button", { name: "Recommended books", exact: true }).click();
   await page.getByRole("button", { name: /Owner selected book/ }).click();
   await expect(
     page.getByLabel("Why recommend it / book description"),
@@ -220,18 +220,37 @@ test("owner can create, publish, edit, hide, reorder and delete persistent conte
   await expect(
     page.getByRole("heading", { name: "Manage the website" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Manage writings" }).click();
+  const original = (await (await page.request.get("/api/content")).json()).content.articles[0];
+  await page.getByRole("button", {name:new RegExp(original.title.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"))}).click();
+  await expect(page.getByRole("textbox",{name:"Article text"}).locator("p").first()).toBeVisible();
+  await expect(page.getByRole("button",{name:"Publish changes"})).toHaveCount(0);
   await page.getByRole("button", { name: "Add writing" }).click();
   await page.getByLabel("Title", { exact: true }).fill("A new owner writing");
-  await page.getByLabel("URL ID").fill("owner-test-writing");
-  await page
-    .getByLabel("Full writing", { exact: false })
-    .fill("First real paragraph.\n\nSecond real paragraph.");
+  await page.getByText("URL ID (advanced)").click();
+  await expect(page.getByLabel("URL ID", {exact:true})).toHaveValue("a-new-owner-writing");
+  await page.getByLabel("URL ID", {exact:true}).fill("owner-test-writing");
+  const editor = page.getByRole("textbox", {name:"Article text"});
+  await editor.pressSequentially("First real paragraph.");
+  await editor.press("Enter");
+  await page.getByRole("button",{name:"Bold",exact:true}).click();
+  await editor.pressSequentially("Second real paragraph.");
+  await page.getByRole("button", {name:"Preview",exact:true}).click();
+  await expect(page.getByLabel("Article preview").locator("strong")).toHaveText("Second real paragraph.");
+  await page.getByRole("button", {name:"Preview",exact:true}).click();
+  await page.getByRole("button",{name:"Save draft",exact:true}).click();
+  await expect(page.getByText("Draft saved in this browser. Changes are unpublished.")).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "Manage writings" }).click();
+  await page.getByRole("button",{name:/A new owner writing/}).click();
+  await expect(editor.locator("strong")).toHaveText("Second real paragraph.");
   await page
     .getByRole("button", { name: "Choose cover book", exact: true })
     .click();
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
   const response = await page.request.get("/api/content");
+  expect((await response.json()).content.articles.find(item=>item.id===original.id)).toEqual(original);
   expect(
     (await response.json()).content.articles.some(
       (item) => item.id === "owner-test-writing",
@@ -242,10 +261,9 @@ test("owner can create, publish, edit, hide, reorder and delete persistent conte
   await page.getByRole("button", { name: "Publish changes" }).click();
   await expect(page.getByRole("status")).toContainText("Published.");
   await page.reload();
+  await page.getByRole("button", { name: "Manage writings" }).click();
   await page.getByRole("button", { name: /A new owner writing/ }).click();
-  await expect(page.getByLabel("Full writing (separate paragraphs with a blank line)", { exact: true })).toHaveValue(
-    "First real paragraph.\n\nSecond real paragraph.",
-  );
+  await expect(editor.locator("p")).toHaveText(["First real paragraph.","Second real paragraph."]);
   await page
     .getByLabel("Title", { exact: true })
     .fill("An edited owner writing");
@@ -269,7 +287,10 @@ test("owner can create, publish, edit, hide, reorder and delete persistent conte
     ),
   ).toBe(true);
   await page.screenshot({ path: "artifacts/admin-mobile.png", fullPage: true });
-  await page.getByRole("button", { name: "Site & author" }).click();
+  await page.setViewportSize({ width: 768, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "artifacts/admin-tablet.png", fullPage:true });
+  await page.getByRole("button", { name: "Site and author" }).click();
   await page
     .getByLabel("Author biography")
     .fill("An author story managed without a developer.");

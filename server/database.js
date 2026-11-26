@@ -42,10 +42,10 @@ export async function administrator(token) {
   const response = await authRequest("user", { token });
   if (response.status === 401 || response.status === 403) return null;
   if (!response.ok) throw requestError(503, "Administrator verification is unavailable.");
-  const { id } = await response.json();
+  const { id, email } = await response.json();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const [record] = await rows("mystic_admins?select=role&user_id=eq." + id);
-  return ["super_admin","content_admin"].includes(record?.role) ? {id, role:record.role} : null;
+  return ["super_admin","content_admin"].includes(record?.role) ? {id, email, role:record.role} : null;
 }
 
 export async function audit(actor, action, target) {

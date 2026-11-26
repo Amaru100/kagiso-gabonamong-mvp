@@ -1,6 +1,6 @@
+import { lazy, Suspense, useEffect } from "react";
 import { useContent } from "./context/ContentContext.jsx";
 import { Route, Routes, useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
 import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import Home from "./pages/Home.jsx";
@@ -11,7 +11,6 @@ import PremiumStore from "./pages/PremiumStore.jsx";
 import Events from "./pages/Events.jsx";
 import Writing from "./pages/Writing.jsx";
 import Books from "./pages/Books.jsx";
-import Admin from "./pages/Admin.jsx";
 import AmbientBackground from "./components/AmbientBackground.jsx";
 import SiteMetadata from "./components/SiteMetadata.jsx";
 import WorkWithMe from "./pages/WorkWithMe.jsx";
@@ -20,13 +19,17 @@ import Testimonials from "./pages/Testimonials.jsx";
 import Privacy from "./pages/Privacy.jsx";
 import Contact from "./pages/Contact.jsx";
 
+const Admin = lazy(() => import("./pages/Admin.jsx"));
+const AdminSetup = lazy(() => import("./pages/AdminSetup.jsx"));
+
 export default function App() {
   const {loading,error} = useContent();
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  if (pathname === "/admin" || pathname === "/admin/login") return <Admin />;
+  if (pathname === "/admin" || pathname === "/admin/login") return <Suspense fallback={<main aria-busy="true">Loading workspace...</main>}><Admin /></Suspense>;
+  if (pathname === "/admin/setup") return <Suspense fallback={<main aria-busy="true">Loading workspace...</main>}><AdminSetup /></Suspense>;
   return (
     <div className="m-site min-h-screen">
       <AmbientBackground />
