@@ -11,3 +11,6 @@ artifacts
 .env.*
 !.env.example
 supabase/.temp/
+.dev.vars
+.dev.vars.*
+.wrangler/

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 
-async function request(view, method = "GET", body) {
+async function request(view, method = "GET", body, headers) {
   const response = await fetch("/api/admin?view=" + view, {
-    method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(body),
+    method, headers:headers || {"Content-Type":"application/json"}, body:headers ? body : JSON.stringify(body),
   });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error);
   return result;
 }
 
-export default function AdminRecords({ role }) {
+export default function AdminRecords({ role, uploadTransport }) {
   const [view,setView] = useState("enquiries");
   const [records,setRecords] = useState(null);
   const [query,setQuery] = useState("");
@@ -30,13 +30,22 @@ export default function AdminRecords({ role }) {
     if (!file?.size || file.size > 3000000) {setError("Choose a file under 3 MB.");return;}
     setError("");
     try {
-      const data = await new Promise((resolve,reject)=>{
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      await request("media","POST",{data,type:file.type,name:file.name,alt:formData.get("alt")});
+      const alt = formData.get("alt");
+      if (uploadTransport === "binary") {
+        await request("media","POST",file,{
+          "Content-Type":file.type,
+          "X-Media-Name":encodeURIComponent(file.name),
+          "X-Media-Alt":encodeURIComponent(alt),
+        });
+      } else {
+        const data = await new Promise((resolve,reject)=>{
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await request("media","POST",{data,type:file.type,name:file.name,alt});
+      }
       form.reset();
       setVersion((value)=>value+1);
     } catch (error) {setError(error.message || "Upload failed.");}

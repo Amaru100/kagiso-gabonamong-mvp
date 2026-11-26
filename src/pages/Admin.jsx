@@ -112,6 +112,7 @@ export default function Admin() {
   const {pathname} = useLocation();
   const [mode,setMode] = useState("");
   const [role,setRole] = useState("");
+  const [uploadTransport,setUploadTransport] = useState("");
   const [email,setEmail] = useState("");
   const { setContent } = useContent();
   const [draft, setDraft] = useState(null);
@@ -128,6 +129,7 @@ export default function Admin() {
     setDraft({ ...result.content, books: result.content.books || [], testimonials:result.content.testimonials || [] });
     setRevision(result.revision);
     setRole(result.role || "");
+    setUploadTransport(result.uploadTransport || "");
     if (pathname === "/admin/login") navigate("/admin", {replace:true});
     setDirty(false);
   };
@@ -551,7 +553,7 @@ export default function Admin() {
           </section>
         </div>
       </fieldset>
-      {role && <AdminRecords role={role} />}
+      {role && <AdminRecords role={role} uploadTransport={uploadTransport} />}
     </main>
   );
 }

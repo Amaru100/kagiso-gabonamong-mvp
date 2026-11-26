@@ -12,6 +12,7 @@ export async function databaseRequest(path, { method = "GET", body, prefer } = {
   const key = secret();
   return fetch(endpoint() + "/rest/v1/" + path, {
     method,
+    redirect: "manual",
     headers: { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json", ...(prefer ? { Prefer: prefer } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(10000),
@@ -29,6 +30,7 @@ export async function authRequest(path, { method = "GET", token, body } = {}) {
   if (!endpoint() || !key) throw requestError(503, "Administrator sign-in is not configured.");
   return fetch(endpoint() + "/auth/v1/" + path, {
     method,
+    redirect: "manual",
     headers: { apikey: key, "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(10000),

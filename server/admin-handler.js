@@ -34,7 +34,7 @@ function legacyAuthorized(req) {
 function cookie(res, value, age, name = "kg_owner") {
   res.setHeader(
     "Set-Cookie",
-    `${name}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.VERCEL ? "; Secure" : ""}`,
+    `${name}=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.VERCEL || process.env.CLOUDFLARE_WORKER ? "; Secure" : ""}`,
   );
 }
 export function sameOrigin(req) {
@@ -42,10 +42,24 @@ export function sameOrigin(req) {
   if (!origin) return false;
   try {
     const url = new URL(origin);
+    if (req.origin) return url.origin === req.origin;
     return url.host === req.headers.host && (process.env.VERCEL ? url.protocol === "https:" : ["https:", "http:"].includes(url.protocol));
   } catch {
     return false;
   }
+}
+async function readBytes(req, limit) {
+  const declared = Number(req.headers["content-length"]);
+  if (declared > limit) throw requestError(413, "Content is too large.");
+  const chunks = [];
+  let length = 0;
+  for await (const chunk of req) {
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    length += bytes.length;
+    if (length > limit) throw requestError(413, "Content is too large.");
+    chunks.push(bytes);
+  }
+  return Buffer.concat(chunks, length);
 }
 export async function bodyOf(req, limit = 900000) {
   if (req.body !== undefined) {
@@ -59,12 +73,7 @@ export async function bodyOf(req, limit = 900000) {
       throw Object.assign(new Error("Invalid request."), { status: 400 });
     }
   }
-  let text = "";
-  for await (const chunk of req) {
-    text += chunk;
-    if (Buffer.byteLength(text) > limit)
-      throw Object.assign(new Error("Content is too large."), { status: 413 });
-  }
+  const text = (await readBytes(req, limit)).toString("utf8");
   try {
     return JSON.parse(text || "{}");
   } catch {
@@ -81,10 +90,13 @@ async function databaseAdmin(req, res, send) {
     return send(200,{ok:true});
   }
   if (req.method === "POST" && !mode) {
-    const { email, password } = await bodyOf(req);
+    const body = await bodyOf(req, 8192);
+    const { email, password } = body || {};
     if (typeof email !== "string" || email.length > 254 || typeof password !== "string" || password.length > 512)
       return send(400,{error:"Enter your email and password."});
     const response = await authRequest("token?grant_type=password",{method:"POST",body:{email,password}});
+    if ((response.status >= 300 && response.status < 400) || response.status >= 500)
+      return send(503,{error:"Administrator sign-in is temporarily unavailable."});
     if (!response.ok) return send(response.status === 429 ? 429 : 401,{error:"Sign-in failed. Check your credentials or try again later."});
     const session = await response.json();
     const actor = await administrator(session.access_token);
@@ -96,7 +108,24 @@ async function databaseAdmin(req, res, send) {
   if (!actor) return send(401,{mode:"supabase",error:"Sign in to manage the website."});
   if (mode === "media") {
     if (req.method === "GET") return send(200,{records:await rows("mystic_media?select=path,url,type,alt,name&order=created_at.desc&limit=200")});
-    if (req.method === "POST") return send(201,{item:await uploadMedia(await bodyOf(req,4_100_000),actor.id)});
+    if (req.method === "POST") {
+      let input;
+      if (req.worker) {
+        try {
+          input = {
+            type: req.headers["content-type"],
+            name: decodeURIComponent(req.headers["x-media-name"] || ""),
+            alt: decodeURIComponent(req.headers["x-media-alt"] || ""),
+          };
+        } catch {
+          return send(400,{error:"Invalid media metadata."});
+        }
+        input.data = await readBytes(req,3_000_000);
+      } else {
+        input = await bodyOf(req,4_100_000);
+      }
+      return send(201,{item:await uploadMedia(input,actor.id)});
+    }
   }
   if (mode === "enquiries") {
     if (req.method === "GET") return send(200,{records:await rows("mystic_enquiries?select=id,type,category,name,email,subject,message,status,created_at&order=created_at.desc&limit=200")});
@@ -122,7 +151,7 @@ async function databaseAdmin(req, res, send) {
     }
   }
   if (mode) return send(405,{error:"Method not allowed."});
-  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role});
+  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role, ...(req.worker ? {uploadTransport:"binary"} : {})});
   if (req.method === "PUT") {
     const body = await bodyOf(req);
     let content;
@@ -144,6 +173,7 @@ export default async function handler(req, res) {
   };
   try {
     if (databaseEnabled()) return await databaseAdmin(req, res, send);
+    if (req.worker) return send(401,{mode:"supabase",error:"Administrator access needs setup. Configure Supabase on the Worker."});
     if (req.method === "GET") {
       if (!legacyAuthorized(req))
         return send(401, {
@@ -260,3 +290,4 @@ export async function contentHandler(req, res) {
     }
   }
 }
+import { Buffer } from "node:buffer";

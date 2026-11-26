@@ -9,7 +9,8 @@ const types = {
 };
 
 export function checkedMedia({type,data,alt,name}) {
-  const bytes = typeof data === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(data) ? Buffer.from(data,"base64") : Buffer.alloc(0);
+  const bytes = Buffer.isBuffer(data) ? data :
+    typeof data === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(data) ? Buffer.from(data,"base64") : Buffer.alloc(0);
   if (!Object.hasOwn(types,type) || bytes.length < 12 || bytes.length > 3_000_000 || !types[type][1](bytes))
     throw requestError(400,"Choose a valid PDF, PNG, JPEG or WebP under 3 MB.");
   if (typeof name !== "string" || !name.trim() || name.length > 180 || typeof alt !== "string" || alt.length > 300)
@@ -23,7 +24,7 @@ export async function uploadMedia(input, actor) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const path = randomUUID() + "." + extension;
   const response = await fetch(base+"/storage/v1/object/mystic-media/"+path,{
-    method:"POST", headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":type},body:bytes,signal:AbortSignal.timeout(15000),
+    method:"POST", redirect:"manual", headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":type},body:bytes,signal:AbortSignal.timeout(15000),
   });
   if (!response.ok) throw requestError(503,"The upload could not be saved.");
   const url = "/media/"+path;
@@ -32,8 +33,9 @@ export async function uploadMedia(input, actor) {
     return item;
   } catch (error) {
     await fetch(base+"/storage/v1/object/mystic-media",{
-      method:"DELETE",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({prefixes:[path]}),signal:AbortSignal.timeout(10000),
+      method:"DELETE",redirect:"manual",headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({prefixes:[path]}),signal:AbortSignal.timeout(10000),
     }).catch(()=>{});
     throw error;
   }
 }
+import { Buffer } from "node:buffer";
