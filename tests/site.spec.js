@@ -180,6 +180,27 @@ test("password setup confirms matching passwords and returns to admin sign-in", 
   expect(submissions).toBe(1);
 });
 
+test("forgot password requests a reset and the reset page returns to sign-in", async ({page}) => {
+  await page.route("**/api/admin", route=>route.fulfill({status:401,json:{mode:"supabase",recoveryEnabled:true}}));
+  await page.route("**/api/admin?view=recover", route=>{
+    expect(route.request().postDataJSON()).toEqual({email:"editor@example.org"});
+    return route.fulfill({status:202,json:{ok:true}});
+  });
+  await page.route("**/api/admin?view=setup", route=>route.fulfill({json:{ok:true}}));
+  await page.goto("/admin/login");
+  await page.getByRole("button",{name:"Forgot password?"}).click();
+  await page.getByLabel("Administrator email").fill("editor@example.org");
+  await page.getByRole("button",{name:"Send reset link"}).click();
+  await expect(page.getByRole("status")).toContainText("If that address can receive a reset email");
+  await page.goto("/admin/reset-password#token="+"a".repeat(56));
+  await expect(page.getByRole("heading",{name:"Reset your password"})).toBeVisible();
+  await page.getByLabel("New password",{exact:true}).fill("fixture-password");
+  await page.getByLabel("Confirm password",{exact:true}).fill("fixture-password");
+  await page.getByRole("button",{name:"Save password"}).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.getByRole("status")).toContainText("Password saved.");
+});
+
 test("owner manages recommended books and future publications", async ({
   page,
 }) => {

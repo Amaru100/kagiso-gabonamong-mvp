@@ -112,7 +112,7 @@ async function request(method = "GET", data, view) {
   }));
   if (!response.ok)
     throw Object.assign(new Error(result.error || "Request failed."), {
-      status: response.status, mode:result.mode,
+      status: response.status, mode:result.mode, recoveryEnabled:result.recoveryEnabled,
     });
   return result;
 }
@@ -120,6 +120,9 @@ export default function Admin() {
   const navigate = useNavigate();
   const {pathname,state} = useLocation();
   const [mode,setMode] = useState("");
+  const [recoveryAvailable,setRecoveryAvailable] = useState(false);
+  const [recovering,setRecovering] = useState(false);
+  const [recoveryRequested,setRecoveryRequested] = useState(false);
   const [role,setRole] = useState("");
   const [uploadTransport,setUploadTransport] = useState("");
   const [email,setEmail] = useState("");
@@ -154,6 +157,7 @@ export default function Admin() {
     if (backup?.content && backup.revision !== result.revision) setError("The website has changed. Copy the edits you need, then discard this draft to reload.");
     setAccount(result.email || "");
     if (result.role) setMode("supabase");
+    setRecoveryAvailable(result.recoveryEnabled === true);
     setRole(result.role || "");
     setUploadTransport(result.uploadTransport || "");
     if (pathname === "/admin/login") navigate("/admin", {replace:true});
@@ -162,6 +166,7 @@ export default function Admin() {
     load()
       .catch((e) => {
         if (e.mode) setMode(e.mode);
+        setRecoveryAvailable(e.recoveryEnabled === true);
         if (e.status === 401 && pathname !== "/admin/login") navigate("/admin/login",{replace:true,state});
         if (e.status !== 401 || e.message.includes("setup"))
           setError(e.message);
@@ -319,7 +324,17 @@ export default function Admin() {
         <p className="mt-5 leading-7 text-[#bbc6bf]">
           Add and edit writings, books, events, resources, and author details.
         </p>
-        <form onSubmit={signIn} className="mt-8 grid gap-4">
+        {recovering ? <form className="mt-8 grid gap-4" onSubmit={async event=>{
+          event.preventDefault();
+          setError("");setRecoveryRequested(false);setBusy(true);
+          try {await request("POST",{email},"recover");setRecoveryRequested(true);}
+          catch (error) {setError(error.message);}
+          finally {setBusy(false);}
+        }}>
+          <label className="admin-label">Administrator email<input type="email" required maxLength={254} autoComplete="email" className="admin-input" value={email} onChange={event=>setEmail(event.target.value)} /></label>
+          <button disabled={busy} className="admin-primary">Send reset link</button>
+          {recoveryRequested && <p role="status">If that address can receive a reset email, look for a link in your inbox or spam folder.</p>}
+        </form> : <form onSubmit={signIn} className="mt-8 grid gap-4">
           {mode === "supabase" && <label className="admin-label">Email<input type="email" required autoComplete="username" className="admin-input" value={email} onChange={(event)=>setEmail(event.target.value)} /></label>}
           <label className="admin-label">
             Owner password
@@ -335,7 +350,10 @@ export default function Admin() {
           <button disabled={busy} className="admin-primary">
             {busy ? "Connecting…" : "Sign in"}
           </button>
-        </form>
+        </form>}
+        {recoveryAvailable && <button className="admin-button mt-4" disabled={busy} onClick={()=>{
+          setRecovering(!recovering);setError("");setRecoveryRequested(false);
+        }}>{recovering ? "Back to sign in" : "Forgot password?"}</button>}
         {error && (
           <p role="alert" className="admin-error mt-5">
             {error}

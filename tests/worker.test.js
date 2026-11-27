@@ -189,3 +189,57 @@ test("An administrator can set a password with an unused recovery link without r
   assert.match(result.headers.get("Set-Cookie"),/Max-Age=0/);
   assert.equal((await setup({origin})).status,400);
 });
+
+test("enquiry email runs only after a new save and email failures leave the save successful", async (t) => {
+  let result = "saved";
+  let attempts = 0;
+  const scheduled = [];
+  configure(t, async (url, options) => {
+    if (url === "https://api.resend.com/emails") {
+      attempts++;
+      const message = JSON.parse(options.body);
+      assert.deepEqual(message.to,["info@mysticmind.co.bw"]);
+      assert.equal(message.from,"Mystic Mind <website@notifications.mysticmind.co.bw>");
+      assert.equal(options.headers["Idempotency-Key"],"mystic-enquiry/"+userId);
+      assert.doesNotMatch(message.text,/Private visitor text|visitor@example.org/);
+      return new Response(null,{status:503});
+    }
+    assert.match(url,/mystic_submit_enquiry$/);
+    return Response.json(result);
+  });
+  const env = {...assetBinding, RESEND_API_KEY:"fixture-resend"};
+  const send = () => worker.fetch(new Request(origin+"/api/enquiry",{
+    method:"POST",headers:{origin},
+    body:JSON.stringify({id:userId,type:"contact",name:"Visitor",email:"visitor@example.org",subject:"Private visitor text",message:"Private visitor text"}),
+  }),env,{waitUntil:promise=>scheduled.push(promise)});
+  t.mock.method(console,"error",()=>{});
+  assert.deepEqual(await (await send()).json(),{ok:true});
+  await Promise.all(scheduled);
+  assert.equal(attempts,1);
+  result="duplicate";
+  assert.deepEqual(await (await send()).json(),{ok:true});
+  result="limited";
+  assert.equal((await send()).status,429);
+  assert.equal(scheduled.length,1);
+});
+
+test("password recovery validates input and gives the same answer for known and unknown addresses", async (t) => {
+  let upstream = 0;
+  configure(t, async (url,options) => {
+    assert.match(url,/auth\/v1\/recover$/);
+    upstream++;
+    return new Response(null,{status:JSON.parse(options.body).email === "editor@example.org" ? 200 : 429});
+  });
+  const recover=(email,enabled=true,requestOrigin=origin)=>worker.fetch(new Request(origin+"/api/admin?view=recover",{
+    method:"POST",headers:{origin:requestOrigin},body:JSON.stringify({email}),
+  }),{...assetBinding,PASSWORD_RECOVERY_ENABLED:enabled ? "1":"0"});
+  assert.equal((await recover("editor@example.org",false)).status,503);
+  assert.equal((await recover("invalid")).status,400);
+  assert.equal((await recover("editor@example.org",true,"https://untrusted.invalid")).status,403);
+  for (const email of ["editor@example.org","missing@example.org"]) {
+    const result = await recover(email);
+    assert.equal(result.status,202);
+    assert.deepEqual(await result.json(),{ok:true});
+  }
+  assert.equal(upstream,2);
+});

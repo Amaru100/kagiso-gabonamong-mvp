@@ -84,6 +84,22 @@ async function databaseAdmin(req, res, send) {
   const mode = new URL(req.url || "/api/admin", "http://localhost").searchParams.get("view");
   if (req.method !== "GET" && !sameOrigin(req)) return send(403,{error:"This request must come from this website."});
   const token = (req.headers.cookie || "").match(/(?:^|;\s*)mm_session=([^;]+)/)?.[1];
+  const recoveryEnabled = req.recoveryEnabled ?? (process.env.PASSWORD_RECOVERY_ENABLED === "1");
+  if (mode === "recover" && req.method === "POST") {
+    if (!recoveryEnabled)
+      return send(503,{error:"Email password recovery is unavailable. Contact the site administrator."});
+    const body = await bodyOf(req,8192);
+    const email = typeof body?.email === "string" ? body.email.trim() : "";
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return send(400,{error:"Enter a valid email address."});
+    try {
+      const result = await authRequest("recover",{method:"POST",body:{email}});
+      if (result.status >= 500) console.error("Supabase password recovery request failed:", result.status);
+    } catch {
+      console.error("Supabase password recovery is unavailable.");
+    }
+    return send(202,{ok:true});
+  }
   if (mode === "setup" && req.method === "POST") {
     const {tokenHash,newPassword} = await bodyOf(req,8192);
     if (typeof tokenHash !== "string" || !/^[a-z0-9]{40,128}$/i.test(tokenHash) ||
@@ -121,7 +137,7 @@ async function databaseAdmin(req, res, send) {
     return send(200,{ok:true});
   }
   const actor = await administrator(token);
-  if (!actor) return send(401,{mode:"supabase",error:"Sign in to manage the website."});
+  if (!actor) return send(401,{mode:"supabase",recoveryEnabled,error:"Sign in to manage the website."});
   if (mode === "overview" && req.method === "GET") {
     const response = await databaseRequest("mystic_enquiries?select=id&status=eq.new&limit=1",{prefer:"count=exact"});
     const count = response.headers.get("Content-Range")?.match(/\/(\d+)$/)?.[1];
@@ -188,7 +204,7 @@ async function databaseAdmin(req, res, send) {
     }
   }
   if (mode) return send(405,{error:"Method not allowed."});
-  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role, email:actor.email, accountId:actor.id, ...(req.worker ? {uploadTransport:"binary"} : {})});
+  if (req.method === "GET") return send(200,{...await readContent(),role:actor.role, email:actor.email, accountId:actor.id, recoveryEnabled, ...(req.worker ? {uploadTransport:"binary"} : {})});
   if (req.method === "PUT") {
     const body = await bodyOf(req);
     let content;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-export default function AdminSetup() {
+export default function AdminSetup({reset}) {
   const navigate = useNavigate();
   const [token] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("token"));
   const [busy,setBusy] = useState(false);
@@ -29,8 +29,8 @@ export default function AdminSetup() {
   }
   return <main className="admin-login">
     <Link to="/admin/login">Back to sign in</Link>
-    <h1 className="display-heading mt-5">Set your password</h1>
-    {!token ? <p>Open the private setup link from your site developer to set your password.</p> :
+    <h1 className="display-heading mt-5">{reset ? "Reset your password" : "Set your password"}</h1>
+    {!token ? <p>{reset ? "Open the link in your password reset email or request a new one from the sign-in page." : "Open the private setup link from your site developer to set your password."}</p> :
       <form onSubmit={submit} className="grid gap-4 mt-5">
         <label className="admin-label">New password<input className="admin-input" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>
         <label className="admin-label">Confirm password<input className="admin-input" name="confirmation" type="password" autoComplete="new-password" minLength={12} maxLength={72} required /></label>

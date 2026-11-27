@@ -35,6 +35,7 @@ export default async function enquiryHandler(req,res) {
     const result = await rows("rpc/mystic_submit_enquiry",{method:"POST",body:{entry:input, fingerprint}});
     if (result === "limited") return send(429,{error:"Too many enquiries. Try again later."});
     if (result !== "saved" && result !== "duplicate") return send(503,{error:"The enquiry could not be saved. Try again later."});
+    if (result === "saved") req.notifyEnquiry?.(input.id);
     return send(200,{ok:true});
   } catch (error) {
     return send(error.status === 400 || error.status === 413 ? error.status : 503,{error:"The enquiry could not be saved. Please try again."});
