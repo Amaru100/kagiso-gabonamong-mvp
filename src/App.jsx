@@ -29,7 +29,7 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [pathname]);
   if (pathname === "/admin" || pathname === "/admin/login") return <Suspense fallback={<main aria-busy="true">Loading workspace...</main>}><Admin /></Suspense>;
-  if (pathname === "/admin/setup") return <Suspense fallback={<main aria-busy="true">Loading workspace...</main>}><AdminSetup /></Suspense>;
+  if (pathname === "/admin/setup" || pathname === "/admin/reset-password") return <Suspense fallback={<main aria-busy="true">Loading workspace...</main>}><AdminSetup reset={pathname === "/admin/reset-password"} /></Suspense>;
   return (
     <div className="m-site min-h-screen">
       <AmbientBackground />

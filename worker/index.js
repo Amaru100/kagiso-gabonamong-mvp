@@ -13,7 +13,7 @@ const handlers = new Map([
   ["/sitemap.xml", sitemap],
 ]);
 
-async function respond(request, url, handler) {
+async function respond(request, url, handler, {notifyEnquiry,recoveryEnabled} = {}) {
   const headers = new Headers({
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
@@ -22,6 +22,8 @@ async function respond(request, url, handler) {
   });
   const req = {
     worker: true,
+    notifyEnquiry,
+    recoveryEnabled,
     origin: url.origin,
     method: request.method,
     url: url.pathname + url.search,
@@ -47,7 +49,7 @@ async function respond(request, url, handler) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const { pathname } = url;
     if (pathname.startsWith("/media/")) {
@@ -55,7 +57,12 @@ export default {
       return respond(request, url, media);
     }
     const handler = handlers.get(pathname);
-    if (handler) return respond(request, url, handler);
+    if (handler) {
+      const notifyEnquiry = handler === enquiry && env.RESEND_API_KEY && ctx
+        ? (id) => ctx.waitUntil(sendEnquiryNotification(env.RESEND_API_KEY, id))
+        : undefined;
+      return respond(request, url, handler, {notifyEnquiry,recoveryEnabled:env.PASSWORD_RECOVERY_ENABLED === "1"});
+    }
     if (pathname === "/api" || pathname.startsWith("/api/") || pathname === "/media")
       return Response.json({error:"Not found."},{status:404,headers:{"Cache-Control":"no-store"}});
     if ((request.method === "GET" || request.method === "HEAD") &&
@@ -71,3 +78,27 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+async function sendEnquiryNotification(key, id) {
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      redirect: "error",
+      headers: {
+        Authorization: "Bearer " + key,
+        "Content-Type": "application/json",
+        "Idempotency-Key": "mystic-enquiry/" + id,
+      },
+      body: JSON.stringify({
+        from: "Mystic Mind <website@notifications.mysticmind.co.bw>",
+        to: ["info@mysticmind.co.bw"],
+        subject: "New Mystic Mind enquiry",
+        text: "A new enquiry is available in the Mystic Mind dashboard.\n\nhttps://mysticmind.co.bw/admin",
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) console.error("Resend enquiry notification rejected:", response.status);
+  } catch {
+    console.error("Resend enquiry notification could not be sent.");
+  }
+}
