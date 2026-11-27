@@ -197,6 +197,7 @@ test("enquiry email runs only after a new save and email failures leave the save
   configure(t, async (url, options) => {
     if (url === "https://api.resend.com/emails") {
       attempts++;
+      assert.equal(options.redirect,"manual");
       const message = JSON.parse(options.body);
       assert.deepEqual(message.to,["info@mysticmind.co.bw"]);
       assert.equal(message.from,"Mystic Mind <website@notifications.mysticmind.co.bw>");

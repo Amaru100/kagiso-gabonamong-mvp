@@ -83,11 +83,12 @@ async function sendEnquiryNotification(key, id) {
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: "Bearer " + key,
         "Content-Type": "application/json",
         "Idempotency-Key": "mystic-enquiry/" + id,
+        "User-Agent": "MysticMind-Worker/1.0",
       },
       body: JSON.stringify({
         from: "Mystic Mind <website@notifications.mysticmind.co.bw>",
@@ -97,8 +98,27 @@ async function sendEnquiryNotification(key, id) {
       }),
       signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) console.error("Resend enquiry notification rejected:", response.status);
-  } catch {
-    console.error("Resend enquiry notification could not be sent.");
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("Location");
+      const target = location ? new URL(location, "https://api.resend.com/emails") : null;
+      console.error("Resend enquiry notification redirected:", response.status, target?.hostname || "unknown");
+      return;
+    }
+    const result = await response.json().catch(() => null);
+    if (!response.ok) {
+      const code = typeof result?.name === "string" && /^[a-z_]{1,60}$/.test(result.name) ? result.name : "unclassified";
+      console.error("Resend enquiry notification rejected:", response.status, code);
+    } else {
+      const messageId = typeof result?.id === "string" && /^[0-9a-f-]{36}$/i.test(result.id) ? result.id : "unknown";
+      console.log("Resend enquiry notification accepted:", response.status, messageId);
+    }
+  } catch (error) {
+    const description = String(error?.message || "");
+    const reason = /redirect/i.test(description) ? "redirect"
+      : /timeout|timed out/i.test(description) || error?.name === "TimeoutError" ? "timeout"
+      : /header/i.test(description) ? "invalid header"
+      : /connect|network|fetch/i.test(description) ? "network"
+      : "unclassified";
+    console.error("Resend enquiry notification could not be sent:", reason);
   }
 }
