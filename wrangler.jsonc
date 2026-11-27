@@ -16,6 +16,7 @@
   },
   "vars": {
     "CLOUDFLARE_WORKER": "1",
+    "PASSWORD_RECOVERY_ENABLED": "1",
     "SITE_ORIGIN": "https://mysticmind.co.bw"
   }
 }
